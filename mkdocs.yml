@@ -1,0 +1,39 @@
+site_name: kvalid
+site_description: "Validación por anotaciones en compile-time y sin reflexión, estilo Jakarta (Kotlin KSP + Java APT)"
+repo_url: https://github.com/kuroxbyte/kvalid
+docs_dir: docs
+
+theme:
+  name: material
+  language: es
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      toggle: { icon: material/brightness-7, name: Modo oscuro }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      toggle: { icon: material/brightness-4, name: Modo claro }
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - search.suggest
+
+markdown_extensions:
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences
+  - tables
+  - toc:
+      permalink: true
+      slugify: !!python/object/apply:pymdownx.slugs.slugify
+        kwds: { case: lower }
+
+nav:
+  - Inicio: index.md
+  - Guía de referencia: referencia.md
+  - Variante Java (APT): guia-java-apt.md
+  - Integraciones (Ktor/Spring): integraciones.md
+  - Ejemplos ejecutables: ejemplos.md
