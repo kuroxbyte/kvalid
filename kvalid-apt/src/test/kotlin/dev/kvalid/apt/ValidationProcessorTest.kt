@@ -2,6 +2,7 @@ package dev.kvalid.apt
 
 import dev.kvalid.runtime.Violation
 import java.io.File
+import java.math.BigDecimal
 import java.net.URLClassLoader
 import java.nio.file.Files
 import javax.tools.ToolProvider
@@ -197,5 +198,120 @@ class ValidationProcessorTest {
         )
         assertEquals("notBlank", cl.violations("t.Account", cl.new("t.Account", "  ")).single().code)
         assertTrue(cl.violations("t.Account", cl.new("t.Account", "ok")).isEmpty())
+    }
+
+    @Test
+    fun `NotNull y guarda de nulabilidad en Java`() {
+        val cl = compile(
+            mapOf(
+                "t/Profile.java" to """
+                    package t;
+                    import dev.kvalid.annotations.*;
+                    @Validated
+                    public record Profile(@NotNull String id, @Size(min = 2) String nick) {}
+                """.trimIndent(),
+            ),
+        )
+        assertTrue(cl.violations("t.Profile", cl.new("t.Profile", "u1", "abc")).isEmpty())
+        // id null → notNull; nick null NO viola @Size: la guarda de nulabilidad la salta (sin NPE).
+        val bad = cl.violations("t.Profile", cl.new("t.Profile", null, null)).associate { it.path to it.code }
+        assertEquals("notNull", bad["id"])
+        assertTrue("nick" !in bad)
+    }
+
+    @Test
+    fun `Positive y Negative en Java (int, double, BigDecimal)`() {
+        val cl = compile(
+            mapOf(
+                "t/Nums.java" to """
+                    package t;
+                    import dev.kvalid.annotations.*;
+                    import java.math.BigDecimal;
+                    @Validated
+                    public record Nums(@Positive int a, @Negative double b, @Positive BigDecimal c) {}
+                """.trimIndent(),
+            ),
+        )
+        assertTrue(cl.violations("t.Nums", cl.new("t.Nums", 5, -2.0, BigDecimal.TEN)).isEmpty())
+        val bad = cl.violations("t.Nums", cl.new("t.Nums", -1, 3.0, BigDecimal.valueOf(-1)))
+            .associate { it.path to it.code }
+        assertEquals("positive", bad["a"])
+        assertEquals("negative", bad["b"])
+        assertEquals("positive", bad["c"])
+    }
+
+    @Test
+    fun `constraints numericas y de texto en Java`() {
+        val cl = compile(
+            mapOf(
+                "t/Order.java" to """
+                    package t;
+                    import dev.kvalid.annotations.*;
+                    import java.math.BigDecimal;
+                    @Validated
+                    public record Order(
+                        @Max(100) int qty,
+                        @Range(min = 1, max = 5) long level,
+                        @DecimalMin("1.0") @DecimalMax("9.9") BigDecimal price,
+                        @Pattern(regex = "[a-z]+") String code,
+                        @NotEmpty String note,
+                        @OneOf(values = {"A", "B"}) String tier
+                    ) {}
+                """.trimIndent(),
+            ),
+        )
+        val ok = cl.new("t.Order", 50, 3L, BigDecimal.valueOf(5), "abc", "x", "A")
+        assertTrue(cl.violations("t.Order", ok).isEmpty())
+        val bad = cl.violations("t.Order", cl.new("t.Order", 200, 9L, BigDecimal.valueOf(20), "AB1", "", "Z"))
+            .associate { it.path to it.code }
+        assertEquals("max", bad["qty"])
+        assertEquals("range", bad["level"])
+        assertEquals("decimalMax", bad["price"])
+        assertEquals("pattern", bad["code"])
+        assertEquals("notEmpty", bad["note"])
+        assertEquals("oneOf", bad["tier"])
+    }
+
+    @Test
+    fun `custom con params en Java cubre literales`() {
+        val cl = compile(
+            mapOf(
+                "t/LenLimitValidator.java" to """
+                    package t;
+                    import dev.kvalid.runtime.*;
+                    import java.util.Map;
+                    public final class LenLimitValidator implements ConstraintValidator<String> {
+                        @Override
+                        public void validate(String value, String field, ValidationContext ctx, Map<String, ?> params) {
+                            int max = ((Number) params.get("max")).intValue();
+                            if (value.length() > max) ctx.violation(field, "lenLimit", Map.of("max", max), null);
+                        }
+                    }
+                """.trimIndent(),
+                "t/LenLimit.java" to """
+                    package t;
+                    import dev.kvalid.annotations.Constraint;
+                    import java.lang.annotation.*;
+                    @Constraint(validatedBy = LenLimitValidator.class)
+                    @Retention(RetentionPolicy.SOURCE)
+                    @Target({ElementType.RECORD_COMPONENT, ElementType.FIELD, ElementType.TYPE_USE})
+                    public @interface LenLimit {
+                        int max();
+                        long since() default 0L;
+                        String label() default "field";
+                        boolean strict() default false;
+                        double weight() default 1.0;
+                    }
+                """.trimIndent(),
+                "t/Code.java" to """
+                    package t;
+                    import dev.kvalid.annotations.Validated;
+                    @Validated
+                    public record Code(@LenLimit(max = 3, since = 1L, label = "slug", strict = true, weight = 2.5) String value) {}
+                """.trimIndent(),
+            ),
+        )
+        assertTrue(cl.violations("t.Code", cl.new("t.Code", "abc")).isEmpty())
+        assertEquals("lenLimit", cl.violations("t.Code", cl.new("t.Code", "abcd")).single().code)
     }
 }
