@@ -16,11 +16,15 @@ dependencyResolutionManagement {
 
 rootProject.name = "kvalid"
 
-// genkit es la base compartida (REPO SEPARADO). Si está clonado como hermano (../genkit) se usa
-// por composite build → código fresco en dev. Si no, se resuelve desde Maven
-// (io.github.kuroxbyte:genkit-* / kspkit / aptkit): **genkit se publica ANTES que kvalid**.
+// genkit es la base compartida (REPO SEPARADO), PUBLICADA en Maven Central
+// (io.github.kuroxbyte:genkit-* / kspkit / aptkit) — de ahí se resuelve POR DEFECTO.
+// Co-desarrollo (OPT-IN): con -Pkvalid.useGenkitSource=true (o esa línea en un gradle.properties
+// local) y ../genkit clonado como hermano, el composite build sustituye genkit por el código
+// fuente. Apagado por defecto para que genkit NO se importe dentro de kvalid en el IDE.
+// Regla de release: genkit se publica ANTES que kvalid.
+val useGenkitSource = providers.gradleProperty("kvalid.useGenkitSource").orNull.toBoolean()
 val genkitDir = rootDir.resolve("../genkit")
-if (genkitDir.exists()) {
+if (useGenkitSource && genkitDir.exists()) {
     includeBuild(genkitDir)
 }
 
