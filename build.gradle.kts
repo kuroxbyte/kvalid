@@ -9,7 +9,7 @@ plugins {
 
 subprojects {
     group = "io.github.kuroxbyte"
-    version = "0.1.0-SNAPSHOT"
+    version = "0.1.0"
     // Kover en cada módulo para exponer la variante de cobertura que agrega el root.
     apply(plugin = "org.jetbrains.kotlinx.kover")
 }

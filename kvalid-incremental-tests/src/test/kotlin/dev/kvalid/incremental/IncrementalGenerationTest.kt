@@ -53,9 +53,9 @@ class IncrementalGenerationTest {
             }
             kotlin { jvmToolchain(17) }
             dependencies {
-                implementation("io.github.kuroxbyte:kvalid-annotations:0.1.0-SNAPSHOT")
-                implementation("io.github.kuroxbyte:kvalid-runtime:0.1.0-SNAPSHOT")
-                ksp("io.github.kuroxbyte:kvalid-processor:0.1.0-SNAPSHOT")
+                implementation("io.github.kuroxbyte:kvalid-annotations:0.1.0")
+                implementation("io.github.kuroxbyte:kvalid-runtime:0.1.0")
+                ksp("io.github.kuroxbyte:kvalid-processor:0.1.0")
             }
             """.trimIndent(),
         )
