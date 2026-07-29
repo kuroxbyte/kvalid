@@ -31,9 +31,9 @@ plugins {
     id("com.google.devtools.ksp") version "2.1.21-2.0.1"
 }
 dependencies {
-    implementation("io.github.kuroxbyte:kvalid-annotations:0.2.0")
-    implementation("io.github.kuroxbyte:kvalid-runtime:0.2.0")   // ValidationResult, Violation, ValidationContext
-    ksp("io.github.kuroxbyte:kvalid-processor:0.2.0")
+    implementation("io.github.kuroxbyte:kvalid-annotations:0.3.0")
+    implementation("io.github.kuroxbyte:kvalid-runtime:0.3.0")   // ValidationResult, Violation, ValidationContext
+    ksp("io.github.kuroxbyte:kvalid-processor:0.3.0")
 }
 ```
 
@@ -320,9 +320,9 @@ if (r instanceof ValidationResult.Invalid inv) { /* inv.getViolations() */ }
 
 ```kotlin
 dependencies {
-    implementation("io.github.kuroxbyte:kvalid-annotations:0.2.0")
-    implementation("io.github.kuroxbyte:kvalid-runtime:0.2.0")
-    annotationProcessor("io.github.kuroxbyte:kvalid-apt:0.2.0")
+    implementation("io.github.kuroxbyte:kvalid-annotations:0.3.0")
+    implementation("io.github.kuroxbyte:kvalid-runtime:0.3.0")
+    annotationProcessor("io.github.kuroxbyte:kvalid-apt:0.3.0")
 }
 ```
 

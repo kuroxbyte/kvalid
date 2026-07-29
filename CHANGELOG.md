@@ -6,6 +6,39 @@ Versionado semántico.
 
 Nada todavía.
 
+## [0.3.0] — 2026-07
+
+### Añadido
+- **Los 8 constraints que faltaban para cubrir el vocabulario de Jakarta Validation 3.0:**
+  `@Null`, `@AssertTrue`, `@AssertFalse`, `@Digits`, `@PositiveOrZero`, `@NegativeOrZero`,
+  `@PastOrPresent` y `@FutureOrPresent`. Disponibles por igual en KSP (Kotlin) y APT (Java).
+- **`dev.kvalid.runtime.Digits`**, en `commonMain`: la cuenta de dígitos de `@Digits` vive en el
+  runtime y no inline en el generado, para no emitir `java.math.BigDecimal` —inexistente fuera
+  de la JVM— y para testear sus casos de borde una sola vez.
+- **[docs/jakarta.md](docs/jakarta.md)**: tabla de equivalencias con Jakarta, diferencias de
+  comportamiento y el razonamiento de lo que deliberadamente no se soporta.
+
+### Corregido
+- **`@DecimalMin`/`@DecimalMax` ya no atan el código generado a la JVM.** Emitían
+  `java.math.BigDecimal` para cualquier tipo numérico, así que una propiedad `Double` o `Int`
+  en `commonMain` generaba código que **no compilaba** para targets nativos, JS ni Wasm
+  (`Unresolved reference: java`). Ahora la comparación depende del tipo, como ya hacían `@Min`
+  y `@Positive`: enteros comparan como `Long` con la cota redondeada **en compilación**
+  (`v < 0.5` ⟺ `v < 1`), `Double`/`Float` comparan en su propio tipo, y `BigDecimal` solo
+  aparece para propiedades que ya son de un tipo exclusivo de la JVM.
+- **La cota decimal se construye una vez, no en cada validación.** Antes los dos `BigDecimal`
+  —el del valor y el de la cota— se creaban dentro de la condición, en cada llamada a
+  `validate()`. La cota es constante, así que ahora se iza a un `private val` de archivo, igual
+  que ya se hacía con las regex de `@Email` y `@Pattern`.
+
+### Notas
+- `@Digits` **no admite `Double`/`Float`** (igual que la especificación: la coma flotante
+  binaria no tiene un número exacto de dígitos decimales) y `@Null` sobre un tipo que no admite
+  null son **errores de compilación**, con un mensaje que explica la causa.
+- Sigue sin soportarse `groups`, y es una decisión de diseño, no una carencia pendiente: su
+  modo de fallo es silencioso (olvidar el grupo hace que los constraints no se ejecuten). El
+  razonamiento completo y la alternativa están en [docs/jakarta.md](docs/jakarta.md).
+
 ## [0.2.0] — 2026-07
 
 ### Añadido

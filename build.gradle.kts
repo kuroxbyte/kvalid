@@ -7,11 +7,60 @@ plugins {
     alias(libs.plugins.kover)
 }
 
+/**
+ * Xcode hace falta para **enlazar** los ejecutables de test de Apple, no para compilar sus
+ * `.klib`: con solo las Command Line Tools, `assemble` —y por tanto la publicación— funciona
+ * igual. Sin Xcode se desactivan **únicamente los tests** de esos targets, para que
+ * `./gradlew build` sea utilizable en un Mac recién montado.
+ *
+ * Los tests de Apple no se pierden: el job `apple` de CI corre en un runner de macOS, que sí
+ * trae Xcode.
+ */
+val isMac: Boolean = System.getProperty("os.name").startsWith("Mac")
+
+/** Tareas que EJECUTAN o ENLAZAN tests de un target Apple (las únicas que exigen Xcode). */
+fun isAppleTestTask(taskName: String): Boolean {
+    val appleTargets = listOf("macosX64", "macosArm64", "iosArm64", "iosX64", "iosSimulatorArm64")
+    return appleTargets.any { target ->
+        val cap = target.replaceFirstChar(Char::uppercaseChar)
+        taskName == "${target}Test" ||
+            taskName == "${target}TestBinaries" ||
+            (taskName.startsWith("link") && taskName.contains("Test") && taskName.endsWith(cap))
+    }
+}
+
+val xcodeAvailable: Boolean = isMac && runCatching {
+    providers.exec {
+        commandLine("/usr/bin/xcrun", "--find", "xcodebuild")
+        isIgnoreExitValue = true
+    }.result.get().exitValue == 0
+}.getOrDefault(false)
+
+if (isMac && !xcodeAvailable) {
+    logger.lifecycle(
+        "[kvalid] Xcode no está disponible (xcode-select apunta a las Command Line Tools): " +
+            "se omiten los TESTS de los targets Apple. Compilación, assemble y publicación no " +
+            "se ven afectados. Para ejecutarlos en local: instala Xcode y " +
+            "`sudo xcode-select -s /Applications/Xcode.app/Contents/Developer`.",
+    )
+}
+
 subprojects {
     group = "io.github.kuroxbyte"
-    version = "0.2.0"
+    version = "0.3.0"
     // Kover en cada módulo para exponer la variante de cobertura que agrega el root.
     apply(plugin = "org.jetbrains.kotlinx.kover")
+
+    if (!xcodeAvailable) {
+        // `onlyIf` y no `enabled`: se evalúa al ejecutar, así que ninguna configuración
+        // posterior del plugin de Kotlin lo puede deshacer.
+        tasks.configureEach {
+            if (isAppleTestTask(name)) {
+                logger.info("[kvalid] sin Xcode → se omite ${project.path}:$name")
+                onlyIf("Xcode no está disponible en esta máquina") { false }
+            }
+        }
+    }
 }
 
 // Cobertura agregada (Kover) → XML en formato JaCoCo para SonarQube.

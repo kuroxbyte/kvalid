@@ -10,9 +10,9 @@ javac que reutiliza el **mismo dominio** (`kvalid-core`) y el mismo runtime
 ```kotlin
 // build.gradle.kts (proyecto Java)
 dependencies {
-    implementation("io.github.kuroxbyte:kvalid-annotations:0.2.0")
-    implementation("io.github.kuroxbyte:kvalid-runtime:0.2.0")
-    annotationProcessor("io.github.kuroxbyte:kvalid-apt:0.2.0")
+    implementation("io.github.kuroxbyte:kvalid-annotations:0.3.0")
+    implementation("io.github.kuroxbyte:kvalid-runtime:0.3.0")
+    annotationProcessor("io.github.kuroxbyte:kvalid-apt:0.3.0")
 }
 ```
 

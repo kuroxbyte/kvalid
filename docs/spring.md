@@ -20,11 +20,11 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.kuroxbyte:kvalid-annotations:0.2.0")
-    implementation("io.github.kuroxbyte:kvalid-runtime:0.2.0")
-    implementation("io.github.kuroxbyte:kvalid-spring-boot-starter:0.2.0")
-    ksp("io.github.kuroxbyte:kvalid-processor:0.2.0")          // DTOs Kotlin
-    // annotationProcessor("io.github.kuroxbyte:kvalid-apt:0.2.0")   // DTOs Java
+    implementation("io.github.kuroxbyte:kvalid-annotations:0.3.0")
+    implementation("io.github.kuroxbyte:kvalid-runtime:0.3.0")
+    implementation("io.github.kuroxbyte:kvalid-spring-boot-starter:0.3.0")
+    ksp("io.github.kuroxbyte:kvalid-processor:0.3.0")          // DTOs Kotlin
+    // annotationProcessor("io.github.kuroxbyte:kvalid-apt:0.3.0")   // DTOs Java
 
     implementation("org.springframework.boot:spring-boot-starter-web")   // o -webflux
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
