@@ -30,10 +30,10 @@ class IncrementalGenerationTest {
         file("settings.gradle.kts").writeText(
             """
             pluginManagement {
-                repositories { gradlePluginPortal(); mavenCentral(); google() }
+                repositories { gradlePluginPortal(); mavenCentral(); mavenLocal(); google() }
             }
             dependencyResolutionManagement {
-                repositories { mavenCentral(); google() }
+                repositories { mavenCentral(); mavenLocal(); google() }   // mavenLocal: mismo fallback que el proyecto real
             }
             rootProject.name = "kvalid-incremental-consumer"
             includeBuild("${root.replace("\\", "\\\\")}") {
