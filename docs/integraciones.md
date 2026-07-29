@@ -11,7 +11,7 @@ Ejemplos ejecutables y verificados en [`kvalid-samples`](https://github.com/kuro
 
 ```kotlin
 dependencies {
-    implementation("io.github.kuroxbyte:kvalid-ktor:0.1.0")
+    implementation("io.github.kuroxbyte:kvalid-ktor:0.2.0")
 }
 ```
 
@@ -39,7 +39,7 @@ Un request inválido responde `400` con `ValidationErrorResponse(errors = [...])
 
 ```kotlin
 dependencies {
-    implementation("io.github.kuroxbyte:kvalid-spring:0.1.0")
+    implementation("io.github.kuroxbyte:kvalid-spring:0.2.0")
 }
 ```
 

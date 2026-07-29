@@ -3,7 +3,7 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.1.0/).
 Versionado semántico.
 
-## [Sin publicar]
+## [0.2.0] — 2026-07
 
 ### Añadido
 - **`@Valid` nativo en Spring MVC y WebFlux.** `KValidSpringValidator` implementa el
