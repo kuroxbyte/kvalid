@@ -54,10 +54,12 @@ Requisitos: JDK 17+.
 | `kvalid-processor`   | COMPOSICIÓN: kspkit + kvalid-core + **emisor KotlinPoet**. Único con `SymbolProcessorProvider`. |
 | `kvalid-i18n`        | OPCIONAL: `MessageResolver` — resuelve `code`+`params` a texto (con interpolación `{param}`). |
 | `kvalid-ktor`        | OPCIONAL: integración Ktor (`StatusPages.kvalid()` → 400 con las violaciones). |
-| `kvalid-spring`      | OPCIONAL: integración Spring (`@RestControllerAdvice` → 400 con las violaciones). |
+| `kvalid-spring`      | OPCIONAL: integración Spring: puente con el `Validator` SPI (para `@Valid` nativo) + `@RestControllerAdvice` → 400. |
+| `kvalid-spring-boot-starter` | Auto-configuración de Boot: cablea `@Valid` nativo en **MVC y WebFlux**. Ver [docs/spring.md](docs/spring.md). |
 | `kvalid-apt`         | Variante **Java** (javac annotation processor): clases Java `@Validated` → `XValidator.validate(obj)`. Reutiliza kvalid-core; emite Java (JavaPoet). Paridad completa con KSP. |
 | `kvalid-benchmarks`  | JMH: KValid (codegen) vs Hibernate Validator (reflexión). No se publica. |
 | `kvalid-samples`     | Ejemplos EJECUTABLES (Kotlin/KSP + Java/APT + integración Ktor/Spring). `./gradlew :kvalid-samples:run`. No se publica. |
+| `kvalid-samples-spring` | App **Spring Boot** ejecutable: `@Valid` nativo con DTO Kotlin (KSP) y DTO Java (APT) a la vez. `./gradlew :kvalid-samples-spring:run`. No se publica. |
 | `kvalid-integration-tests` | Consumidor REAL end-to-end: aplica KSP y llama al `validate()` generado directamente (sin reflexión). No se publica. |
 | `kvalid-incremental-tests` | Incrementalidad de KSP (Gradle TestKit): un consumidor real verifica que tocar una clase ajena NO regenera el archivo. No se publica. |
 
@@ -65,6 +67,8 @@ Requisitos: JDK 17+.
 
 - **Guía de referencia** (constraints, comportamiento, código generado): [docs/referencia.md](docs/referencia.md).
 - **Variante Java (APT)** — records, POJOs, custom, element-level, cross-field: [docs/guia-java-apt.md](docs/guia-java-apt.md).
+- **Spring Boot — `@Valid` nativo** (MVC y WebFlux, Kotlin y Java): [docs/spring.md](docs/spring.md) ·
+  app ejecutable en [`kvalid-samples-spring`](kvalid-samples-spring).
 - **Integraciones** (Ktor y Spring, con ejemplos): [docs/integraciones.md](docs/integraciones.md).
 - **Ejemplos ejecutables** (Kotlin y Java, un solo `run`): [docs/ejemplos.md](docs/ejemplos.md) · fuente en [`kvalid-samples`](kvalid-samples).
 - Sitio (MkDocs Material): `mkdocs serve`. Cambios: [CHANGELOG.md](CHANGELOG.md).

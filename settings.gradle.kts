@@ -40,6 +40,7 @@ include(
     ":kvalid-benchmarks",
     ":kvalid-apt",
     ":kvalid-samples",
+    ":kvalid-samples-spring",
     ":kvalid-integration-tests",
     ":kvalid-incremental-tests",
 )

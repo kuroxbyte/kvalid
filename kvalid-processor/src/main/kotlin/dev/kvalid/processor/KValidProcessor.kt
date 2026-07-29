@@ -10,6 +10,7 @@ import com.google.devtools.ksp.processing.SymbolProcessorEnvironment
 import com.google.devtools.ksp.processing.SymbolProcessorProvider
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
+import com.google.devtools.ksp.symbol.Origin
 import dev.kspkit.KspCodeWriter
 import dev.kspkit.KspDiagnosticReporter
 import dev.kspkit.KspTranslator
@@ -64,6 +65,12 @@ internal class KValidProcessor(
 
         resolver.getSymbolsWithAnnotation(ValidationNames.VALIDATED)
             .filterIsInstance<KSClassDeclaration>()
+            // Los tipos JAVA son de kvalid-apt, no de KSP. En un módulo mixto KSP también los
+            // ve, y procesarlos aquí hacía dos daños: (1) generaba un `validate()` VACÍO —KSP
+            // no lee los constraints de los componentes de un record— es decir, un validador
+            // que no valida nada en silencio; y (2) su adaptador colisionaba con el que emite
+            // APT, porque ambos son una clase con el mismo FQN.
+            .filterNot { it.origin == Origin.JAVA || it.origin == Origin.JAVA_LIB }
             .forEach { decl ->
                 val reporter = KspDiagnosticReporter(logger)
                 val classModel = translator.translate(decl)

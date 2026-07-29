@@ -23,6 +23,9 @@ theme:
 
 markdown_extensions:
   - admonition
+  - pymdownx.details          # cuerpos plegables de los admonition
+  - pymdownx.tabbed:          # pestañas Kotlin/Java (=== "…")
+      alternate_style: true
   - pymdownx.highlight
   - pymdownx.superfences
   - tables
@@ -35,5 +38,6 @@ nav:
   - Inicio: index.md
   - Guía de referencia: referencia.md
   - Variante Java (APT): guia-java-apt.md
+  - Spring Boot (@Valid nativo): spring.md
   - Integraciones (Ktor/Spring): integraciones.md
   - Ejemplos ejecutables: ejemplos.md

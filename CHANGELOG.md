@@ -19,6 +19,17 @@ Versionado semántico.
   `Any`. Con `spring` lleva `@Component`; con `serviceloader`, `META-INF/services`.
   En KSP solo se emite en target **JVM**, para no romper los demás targets KMP.
 
+- Módulo `kvalid-samples-spring`: app **Spring Boot ejecutable** (`./gradlew
+  :kvalid-samples-spring:run`) con un DTO Kotlin (KSP) y otro Java (APT) **en la misma app**,
+  más `docs/spring.md` con el recorrido completo.
+
+### Corregido
+- **KSP ya no procesa tipos Java.** En un módulo mixto Kotlin+Java, KSP también ve las clases
+  Java `@Validated` y las procesaba: generaba un `validate()` **vacío** (no lee los constraints
+  de los componentes de un record), es decir un validador que no validaba nada en silencio, y
+  además su adaptador colisionaba con el de APT por tener el mismo FQN. Los tipos Java son de
+  `kvalid-apt`.
+
 ### Cambiado (BREAKING)
 - **Renombrado a la marca `KValid`.** Las clases pasan de `Kvalid*` a `KValid*`, y el SPI queda
   como **`KValidator`** (antes habría sido `KValidValidator`, que tartamudea). Afecta a tipos

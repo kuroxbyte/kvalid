@@ -4,6 +4,10 @@ package dev.kvalid.processor
 
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
+import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspProcessorOptions
+import com.tschuchort.compiletesting.symbolProcessorProviders
+import com.tschuchort.compiletesting.useKsp2
 import com.tschuchort.compiletesting.kspSourcesDir
 import dev.kvalid.runtime.ValidationResult
 import dev.kvalid.runtime.spi.KValidator
@@ -92,6 +96,50 @@ class ValidatorAdapterTest {
             .firstOrNull { it.isFile && it.name == "dev.kvalid.runtime.spi.KValidator" }
         assertNotNull(services, "falta META-INF/services: ${files.map { it.path }}")
         assertEquals("t.AccountKValidator", services.readText().trim())
+    }
+
+    /**
+     * Regresión: en un módulo **mixto** Kotlin+Java, KSP también ve las clases Java. Si las
+     * procesa, pasan dos cosas malas: genera un `validate()` **vacío** (no lee los constraints
+     * de un record) y su adaptador **colisiona** con el que emite APT, porque ambos son una
+     * clase con el mismo FQN. Los tipos Java son de kvalid-apt.
+     */
+    @Test
+    fun `los tipos JAVA los ignora KSP (son de kvalid-apt)`() {
+        val compilation = KotlinCompilation().apply {
+            sources = listOf(
+                SourceFile.kotlin(
+                    "Kt.kt",
+                    """
+                    package t
+                    import dev.kvalid.annotations.*
+                    @Validated
+                    data class KotlinDto(@NotBlank val name: String)
+                    """.trimIndent(),
+                ),
+                SourceFile.java(
+                    "JavaDto.java",
+                    """
+                    package t;
+                    import dev.kvalid.annotations.*;
+                    @Validated
+                    public record JavaDto(@NotBlank String reference) {}
+                    """.trimIndent(),
+                ),
+            )
+            useKsp2()
+            symbolProcessorProviders += KValidProcessorProvider()
+            kspProcessorOptions = mutableMapOf("kvalid.componentModel" to "spring")
+            inheritClassPath = true
+            messageOutputStream = System.out
+        }
+        val result = compilation.compile()
+        check(result.exitCode == KotlinCompilation.ExitCode.OK) { result.messages }
+
+        val names = compilation.generatedFiles().map { it.name }
+        assertTrue("KotlinDtoKValidator.kt" in names, "falta el adaptador del tipo Kotlin: $names")
+        assertFalse("JavaDtoKValidator.kt" in names, "KSP no debe tocar tipos Java: $names")
+        assertFalse("JavaDtoValidator.kt" in names, "tampoco el validador vacío: $names")
     }
 
     @Test
