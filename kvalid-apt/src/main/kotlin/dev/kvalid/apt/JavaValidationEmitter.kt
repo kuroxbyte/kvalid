@@ -12,6 +12,7 @@ import com.squareup.javapoet.TypeSpec
 import dev.genkit.emit.toGeneratedFile
 import dev.genkit.model.TypeRef
 import dev.genkit.ports.GeneratedFile
+import dev.kvalid.core.build.IntegerBound
 import dev.kvalid.core.model.Constraint
 import dev.kvalid.core.model.ValidatedField
 import dev.kvalid.core.model.ValidationModel
@@ -81,6 +82,7 @@ public class JavaValidationEmitter {
             .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
             .addMethod(MethodSpec.constructorBuilder().addModifiers(Modifier.PRIVATE).build())
         regexFields(model).forEach { cls.addField(it) }
+        decimalBounds(model).forEach { cls.addField(boundField(it)) }
         cls.addMethod(validate)
 
         return JavaFile.builder(pkg, cls.build()).build().toGeneratedFile()
@@ -189,8 +191,8 @@ public class JavaValidationEmitter {
                 "if (\$L || \$L) violations.add(\$L)", cmp(type, v, c.min, below = true), cmp(type, v, c.max, below = false),
                 vio("range", CodeBlock.of("\$T.of(\$S, \$LL, \$S, \$LL)", MAP, "min", c.min, "max", c.max), c.message),
             )
-            is Constraint.DecimalMin -> b.addStatement("if (new \$T(String.valueOf(\$L)).compareTo(new \$T(\$S)) < 0) violations.add(\$L)", BIG_DECIMAL, v, BIG_DECIMAL, c.value, vio("decimalMin", CodeBlock.of("\$T.of(\$S, \$S)", MAP, "min", c.value), c.message))
-            is Constraint.DecimalMax -> b.addStatement("if (new \$T(String.valueOf(\$L)).compareTo(new \$T(\$S)) > 0) violations.add(\$L)", BIG_DECIMAL, v, BIG_DECIMAL, c.value, vio("decimalMax", CodeBlock.of("\$T.of(\$S, \$S)", MAP, "max", c.value), c.message))
+            is Constraint.DecimalMin -> b.addStatement(IF_ADD_VIOLATION, decimalCondition(type, v, c.value, min = true), vio("decimalMin", CodeBlock.of("\$T.of(\$S, \$S)", MAP, "min", c.value), c.message))
+            is Constraint.DecimalMax -> b.addStatement(IF_ADD_VIOLATION, decimalCondition(type, v, c.value, min = false), vio("decimalMax", CodeBlock.of("\$T.of(\$S, \$S)", MAP, "max", c.value), c.message))
             is Constraint.Positive -> b.addStatement(IF_ADD_VIOLATION, sign(type, v, positive = true), vio("positive", null, c.message))
             is Constraint.Negative -> b.addStatement(IF_ADD_VIOLATION, sign(type, v, positive = false), vio("negative", null, c.message))
             is Constraint.Past -> b.addStatement("if (!\$L.isBefore(java.time.Instant.now())) violations.add(\$L)", v, vio("past", null, c.message))
@@ -273,6 +275,55 @@ public class JavaValidationEmitter {
         t.qualifiedName == "java.math.BigDecimal" -> "$v.toPlainString()"
         else -> "String.valueOf($v)"
     }
+
+    /** Simétrico a `decimalCondition` del emisor Kotlin: la comparación depende del tipo. */
+    private fun decimalCondition(t: TypeRef, v: String, bound: String, min: Boolean): String {
+        val op = if (min) "<" else ">"
+        return when {
+            t.qualifiedName == "java.math.BigDecimal" -> "$v.compareTo(${boundName(bound)}) $op 0"
+            t.qualifiedName == "java.math.BigInteger" ->
+                "new java.math.BigDecimal(String.valueOf($v)).compareTo(${boundName(bound)}) $op 0"
+            t.qualifiedName in FLOATING -> "$v $op ${java.math.BigDecimal(bound).toDouble()}"
+            else -> when (val b = if (min) IntegerBound.forMin(bound) else IntegerBound.forMax(bound)) {
+                is IntegerBound.Fits -> "$v $op ${b.value}L"
+                IntegerBound.AboveAll -> if (min) "true" else "false"
+                IntegerBound.BelowAll -> if (min) "false" else "true"
+            }
+        }
+    }
+
+    private fun boundName(bound: String): String =
+        "DEC_" + bound.map { ch ->
+            when {
+                ch.isDigit() -> ch
+                ch == '-' -> 'M'
+                ch == '+' -> 'P'
+                ch == 'e' || ch == 'E' -> 'E'
+                else -> '_'
+            }
+        }.joinToString("")
+
+    /** Cotas que necesitan constante: solo las de tipos BigDecimal/BigInteger. */
+    private fun decimalBounds(model: ValidationModel): List<String> {
+        val out = mutableListOf<String>()
+        fun collect(t: TypeRef, c: Constraint) {
+            val value = when (c) {
+                is Constraint.DecimalMin -> c.value
+                is Constraint.DecimalMax -> c.value
+                else -> return
+            }
+            if (t.qualifiedName == "java.math.BigDecimal" || t.qualifiedName == "java.math.BigInteger") out += value
+        }
+        model.fields.forEach { f ->
+            f.constraints.forEach { collect(f.type, it) }
+            f.type.typeArgs.firstOrNull()?.let { et -> f.elementConstraints.forEach { collect(et, it) } }
+        }
+        return out.distinct()
+    }
+
+    private fun boundField(bound: String): FieldSpec =
+        FieldSpec.builder(BIG_DECIMAL, boundName(bound), Modifier.PRIVATE, Modifier.STATIC, Modifier.FINAL)
+            .initializer("new \$T(\$S)", BIG_DECIMAL, bound).build()
 
     private fun validatorFqn(t: TypeRef): ClassName {
         val pkg = t.packageName ?: t.qualifiedName.substringBeforeLast('.', "")

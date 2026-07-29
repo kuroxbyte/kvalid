@@ -35,8 +35,8 @@ nullable, `this.f?.let { v -> ... }`):
 | `@Min(value)`      | comparación en el tipo propio (ver abajo) → `"min"` (params: min)                |
 | `@Max(value)`      | comparación en el tipo propio → `"max"` (params: max)                            |
 | `@Range(min,max)`  | `min` y `max` combinados → `"range"` (params: min,max)                           |
-| `@DecimalMin(v)`   | `if (BigDecimal(v.toString()).compareTo(BigDecimal("v")) < 0) ... "decimalMin"`  |
-| `@DecimalMax(v)`   | `... compareTo(...) > 0 ... "decimalMax"`                                        |
+| `@DecimalMin(v)`   | Según el tipo: entero → `v.toLong() < ⌈cota⌉`; `Double`/`Float` → `v.toDouble() < cota`; `BigDecimal`/`BigInteger` → `v.compareTo(DEC_x) < 0` con la cota izada a constante de archivo |
+| `@DecimalMax(v)`   | Igual, con `>` y `⌊cota⌋`                                                        |
 | `@Positive`        | `> 0` en el tipo propio → `"positive"`                                           |
 | `@Negative`        | `< 0` en el tipo propio → `"negative"`                                           |
 | `@PositiveOrZero`  | `>= 0` en el tipo propio → `"positiveOrZero"`                                    |

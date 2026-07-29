@@ -10,6 +10,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import dev.genkit.emit.toGeneratedFile
 import dev.genkit.model.TypeRef
 import dev.genkit.ports.GeneratedFile
+import dev.kvalid.core.build.IntegerBound
 import dev.kvalid.core.model.Constraint
 import dev.kvalid.core.model.ValidatedField
 import dev.kvalid.core.model.ValidationModel
@@ -30,6 +31,7 @@ internal class ValidationEmitter {
         val CONTEXT = ClassName(RUNTIME_PKG, "ValidationContext")
         val DIGITS = ClassName(RUNTIME_PKG, "Digits")
         val REGEX = ClassName("kotlin.text", "Regex")
+        val BIG_DECIMAL = ClassName("java.math", "BigDecimal")
     }
 
     fun emit(model: ValidationModel): GeneratedFile {
@@ -68,6 +70,7 @@ internal class ValidationEmitter {
         if (needsEmail) file.addProperty(regexProp("EMAIL_REGEX", EMAIL_REGEX_LITERAL))
         if (needsUrl) file.addProperty(regexProp("URL_REGEX", URL_REGEX_LITERAL))
         patterns.forEach { (name, regex) -> file.addProperty(regexProp("${name}_pattern", regex)) }
+        decimalBounds(model).forEach { file.addProperty(boundProp(it)) }
         file.addFunction(fn)
         return file.build().toGeneratedFile()
     }
@@ -75,13 +78,19 @@ internal class ValidationEmitter {
     private fun regexProp(name: String, literal: String): PropertySpec =
         PropertySpec.builder(name, REGEX).addModifiers(KModifier.PRIVATE).initializer("Regex(%S)", literal).build()
 
+    /** La cota decimal, construida UNA vez por archivo (igual que las regex). */
+    private fun boundProp(bound: String): PropertySpec =
+        PropertySpec.builder(boundName(bound), BIG_DECIMAL)
+            .addModifiers(KModifier.PRIVATE)
+            .initializer("%T(%S)", BIG_DECIMAL, bound)
+            .build()
+
     private fun emitField(b: CodeBlock.Builder, field: ValidatedField) {
         val n = field.name
 
         field.constraints.filterIsInstance<Constraint.NotNull>().forEach { c ->
             b.addStatement("if (this.%N == null) violations += %L", n, violation(CodeBlock.of("%S", n), "notNull", null, c.message))
         }
-
         field.constraints.filterIsInstance<Constraint.Null>().forEach { c ->
             b.addStatement("if (this.%N != null) violations += %L", n, violation(CodeBlock.of("%S", n), "null", null, c.message))
         }
@@ -140,8 +149,8 @@ internal class ValidationEmitter {
                 "if (%L || %L) violations += %L", below(type, value, c.min), above(type, value, c.max),
                 violation(path, "range", CodeBlock.of("mapOf(%S to %LL, %S to %LL)", "min", c.min, "max", c.max), c.message),
             )
-            is Constraint.DecimalMin -> b.addStatement("if (%L < 0) violations += %L", decimalCmp(value, c.value), violation(path, "decimalMin", CodeBlock.of("mapOf(%S to %S)", "min", c.value), c.message))
-            is Constraint.DecimalMax -> b.addStatement("if (%L > 0) violations += %L", decimalCmp(value, c.value), violation(path, "decimalMax", CodeBlock.of("mapOf(%S to %S)", "max", c.value), c.message))
+            is Constraint.DecimalMin -> b.addStatement(IF_ADD_VIOLATION, decimalCondition(type, value, c.value, min = true), violation(path, "decimalMin", CodeBlock.of("mapOf(%S to %S)", "min", c.value), c.message))
+            is Constraint.DecimalMax -> b.addStatement(IF_ADD_VIOLATION, decimalCondition(type, value, c.value, min = false), violation(path, "decimalMax", CodeBlock.of("mapOf(%S to %S)", "max", c.value), c.message))
             is Constraint.Past -> b.addStatement(IF_ADD_VIOLATION, temporal(type, value, past = true), violation(path, "past", null, c.message))
             is Constraint.Future -> b.addStatement(IF_ADD_VIOLATION, temporal(type, value, past = false), violation(path, "future", null, c.message))
             is Constraint.Positive -> b.addStatement(IF_ADD_VIOLATION, nonPositive(type, value), violation(path, "positive", null, c.message))
@@ -171,24 +180,6 @@ internal class ValidationEmitter {
         "java.math.BigDecimal" -> "$v.toPlainString()"
         else -> "$v.toString()"
     }
-
-    /** Violación de `@PositiveOrZero` (negativo estricto) o de `@NegativeOrZero` (positivo estricto). */
-    private fun strictlySigned(t: TypeRef, v: String, negative: Boolean): String {
-        val op = if (negative) "<" else ">"
-        return when (numericCategory(t)) {
-            NumCat.INTEGER -> "$v.toLong() $op 0L"
-            NumCat.FLOATING -> "$v.toDouble() $op 0.0"
-            NumCat.BIG_INTEGER, NumCat.BIG_DECIMAL -> "$v.signum() $op 0"
-        }
-    }
-
-    /** Violación de `@PastOrPresent` (está en el futuro) o `@FutureOrPresent` (está en el pasado). */
-    private fun temporalOrPresent(t: TypeRef, v: String, past: Boolean): String =
-        if (t.qualifiedName == "java.time.Instant") {
-            if (past) "$v.isAfter(java.time.Instant.now())" else "$v.isBefore(java.time.Instant.now())"
-        } else {
-            if (past) "$v > kotlinx.datetime.Clock.System.now()" else "$v < kotlinx.datetime.Clock.System.now()"
-        }
 
     private fun violation(path: CodeBlock, code: String, params: CodeBlock?, message: String): CodeBlock {
         val cb = CodeBlock.builder().add("%T(%L, %S", VIOLATION, path, code)
@@ -225,14 +216,95 @@ internal class ValidationEmitter {
         NumCat.BIG_INTEGER, NumCat.BIG_DECIMAL -> "$v.signum() >= 0"
     }
 
-    private fun decimalCmp(v: String, value: String): String =
-        "java.math.BigDecimal($v.toString()).compareTo(java.math.BigDecimal(\"$value\"))"
+    /** Violación de `@PositiveOrZero` (negativo estricto) o de `@NegativeOrZero` (positivo estricto). */
+    private fun strictlySigned(t: TypeRef, v: String, negative: Boolean): String {
+        val op = if (negative) "<" else ">"
+        return when (numericCategory(t)) {
+            NumCat.INTEGER -> "$v.toLong() $op 0L"
+            NumCat.FLOATING -> "$v.toDouble() $op 0.0"
+            NumCat.BIG_INTEGER, NumCat.BIG_DECIMAL -> "$v.signum() $op 0"
+        }
+    }
+
+    /**
+     * Comparación de `@DecimalMin`/`@DecimalMax` **según el tipo**, como ya hacían [below] y
+     * [nonPositive]. Antes se construían dos `BigDecimal` en cada validación, pasara lo que
+     * pasara: eso ataba el generado a la JVM (`java.math` no existe en Native ni JS) y
+     * asignaba dos objetos por llamada.
+     *
+     * Ahora `BigDecimal` solo aparece para propiedades que YA son de un tipo exclusivo de la
+     * JVM, y con la cota izada a una constante de archivo.
+     */
+    private fun decimalCondition(t: TypeRef, v: String, bound: String, min: Boolean): String {
+        val op = if (min) "<" else ">"
+        return when (numericCategory(t)) {
+            NumCat.INTEGER -> integerCondition(v, bound, min)
+            NumCat.FLOATING -> "$v.toDouble() $op ${doubleLiteral(bound)}"
+            NumCat.BIG_DECIMAL -> "$v.compareTo(${boundName(bound)}) $op 0"
+            NumCat.BIG_INTEGER -> "java.math.BigDecimal($v.toString()).compareTo(${boundName(bound)}) $op 0"
+        }
+    }
+
+    /** La cota se redondea al generar, así que la comparación entera es exacta y gratis. */
+    private fun integerCondition(v: String, bound: String, min: Boolean): String {
+        val op = if (min) "<" else ">"
+        return when (val b = if (min) IntegerBound.forMin(bound) else IntegerBound.forMax(bound)) {
+            is IntegerBound.Fits -> "$v.toLong() $op ${b.value}L"
+            // Ningún Long alcanza la cota: la comparación tiene un resultado fijo.
+            IntegerBound.AboveAll -> if (min) "true" else "false"
+            IntegerBound.BelowAll -> if (min) "false" else "true"
+        }
+    }
+
+    /** Literal Double válido para cualquier cota que BigDecimal acepte (p. ej. `1E+2` → `100.0`). */
+    private fun doubleLiteral(bound: String): String = java.math.BigDecimal(bound).toDouble().toString()
+
+    /**
+     * Nombre de la constante de archivo para una cota. Deriva del VALOR, no del campo, así que
+     * dos campos con la misma cota la comparten y dos cotas distintas nunca colisionan.
+     */
+    private fun boundName(bound: String): String =
+        "DEC_" + bound.map { ch ->
+            when {
+                ch.isDigit() -> ch
+                ch == '-' -> 'M'
+                ch == '+' -> 'P'
+                ch == 'e' || ch == 'E' -> 'E' // distinto de '.', o `1E2` y `1.2` chocarían
+                else -> '_'
+            }
+        }.joinToString("")
+
+    /** Cotas que necesitan constante: solo las de tipos BigDecimal/BigInteger. */
+    private fun decimalBounds(model: ValidationModel): List<String> {
+        val out = mutableListOf<String>()
+        fun collect(t: TypeRef, c: Constraint) {
+            val value = when (c) {
+                is Constraint.DecimalMin -> c.value
+                is Constraint.DecimalMax -> c.value
+                else -> return
+            }
+            if (numericCategory(t) in setOf(NumCat.BIG_DECIMAL, NumCat.BIG_INTEGER)) out += value
+        }
+        model.fields.forEach { f ->
+            f.constraints.forEach { collect(f.type, it) }
+            f.type.typeArgs.firstOrNull()?.let { et -> f.elementConstraints.forEach { collect(et, it) } }
+        }
+        return out.distinct()
+    }
 
     private fun temporal(t: TypeRef, v: String, past: Boolean): String =
         if (t.qualifiedName == "java.time.Instant") {
             if (past) "!$v.isBefore(java.time.Instant.now())" else "!$v.isAfter(java.time.Instant.now())"
         } else {
             if (past) "$v >= kotlinx.datetime.Clock.System.now()" else "$v <= kotlinx.datetime.Clock.System.now()"
+        }
+
+    /** Violación de `@PastOrPresent` (está en el futuro) o `@FutureOrPresent` (está en el pasado). */
+    private fun temporalOrPresent(t: TypeRef, v: String, past: Boolean): String =
+        if (t.qualifiedName == "java.time.Instant") {
+            if (past) "$v.isAfter(java.time.Instant.now())" else "$v.isBefore(java.time.Instant.now())"
+        } else {
+            if (past) "$v > kotlinx.datetime.Clock.System.now()" else "$v < kotlinx.datetime.Clock.System.now()"
         }
 
     private enum class NumCat { INTEGER, FLOATING, BIG_INTEGER, BIG_DECIMAL }

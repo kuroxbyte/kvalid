@@ -108,6 +108,36 @@ class ValidationProcessorTest {
         assertEquals(listOf("futureOrPresent"), cl.violations("t.Enrolment", obj(expires = past)).map { it.code })
     }
 
+    /** Paridad con KSP tras hacer `@DecimalMin`/`@DecimalMax` dependientes del tipo. */
+    @Test
+    fun `record Java - cotas decimales por tipo`() {
+        val cl = compile(
+            mapOf(
+                "t/M.java" to """
+                    package t;
+                    import dev.kvalid.annotations.*;
+                    import java.math.BigDecimal;
+                    @Validated
+                    public record M(
+                        @DecimalMin("0.5") int n,
+                        @DecimalMax("0.5") int m,
+                        @DecimalMin("0.01") double price,
+                        @DecimalMin("1.0") BigDecimal exact
+                    ) {}
+                """.trimIndent(),
+            ),
+        )
+        fun codes(n: Int, m: Int, price: Double, exact: BigDecimal) =
+            cl.violations("t.M", cl.new("t.M", n, m, price, exact)).map { it.code }
+
+        assertTrue(codes(1, 0, 0.01, BigDecimal("1.00")).isEmpty(), "el caso válido no debe violar nada")
+        // n < 0.5 ⟺ n < 1; m > 0.5 ⟺ m > 0.
+        assertEquals(listOf("decimalMin"), codes(0, 0, 0.01, BigDecimal.ONE))
+        assertEquals(listOf("decimalMax"), codes(1, 1, 0.01, BigDecimal.ONE))
+        assertEquals(listOf("decimalMin"), codes(1, 0, 0.005, BigDecimal.ONE))
+        assertEquals(listOf("decimalMin"), codes(1, 0, 0.01, BigDecimal("0.999")))
+    }
+
     @Test
     fun `cascada anidada Validated en Java`() {
         val cl = compile(
