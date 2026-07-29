@@ -24,11 +24,15 @@ class JavaValidatorAdapterTest {
         fun generated(name: String): File? = generatedSources().firstOrNull { it.name == name }
     }
 
-    private fun compile(source: String, options: Map<String, String> = emptyMap()): Compiled {
+    private fun compile(
+        source: String,
+        options: Map<String, String> = emptyMap(),
+        fileName: String = "t/Account.java",   // javac exige que coincida con la clase pública
+    ): Compiled {
         val srcDir = Files.createTempDirectory("kvalid-apt-adapter-src").toFile()
         val outDir = Files.createTempDirectory("kvalid-apt-adapter-out").toFile()
         val genDir = Files.createTempDirectory("kvalid-apt-adapter-gen").toFile()
-        val file = File(srcDir, "t/Account.java").apply { parentFile.mkdirs(); writeText(source) }
+        val file = File(srcDir, fileName).apply { parentFile.mkdirs(); writeText(source) }
 
         val compiler = ToolProvider.getSystemJavaCompiler()
         val diagnostics = javax.tools.DiagnosticCollector<javax.tools.JavaFileObject>()
@@ -113,5 +117,38 @@ class JavaValidatorAdapterTest {
 
         assertTrue("kvalid.componentModel" in result.messages, "debe avisar: ${result.messages}")
         assertFalse(result.generatedSources().any { it.name.contains("KValidator") })
+    }
+
+    /**
+     * Regresión (genkit 0.1.1): el paquete de un tipo Java **anidado** se derivaba del nombre
+     * calificado, así que `t.Outer.Inner` daba paquete `t.Outer` — la clase externa. El
+     * generado caía en un paquete inexistente y javac fallaba con *"class Outer clashes with
+     * package of same name"*: **ningún tipo Java anidado era usable**.
+     */
+    @Test
+    fun `un tipo Java ANIDADO genera en el paquete correcto`() {
+        val nested = """
+            package t;
+            import dev.kvalid.annotations.*;
+
+            public final class Outer {
+                @Validated
+                public record Inner(@NotBlank String code) {}
+            }
+        """.trimIndent()
+
+        // Que compile YA es la aserción principal: antes reventaba en javac.
+        val result = compile(nested, mapOf("kvalid.componentModel" to "spring"), fileName = "t/Outer.java")
+
+        // El adaptador aplana el nombre anidado (Outer+Inner) para no colisionar con otro
+        // `Inner` de distinto contenedor en el mismo paquete.
+        val adapter = result.generated("OuterInnerKValidator.java")
+        assertNotNull(adapter, "no se generó: ${result.generatedSources().map { it.name }}")
+        val code = adapter.readText()
+        assertTrue("package t;" in code, "debe generar en el paquete 't', no en 't.Outer':\n$code")
+        assertTrue("Outer.Inner" in code, "debe referenciar el tipo anidado como Outer.Inner:\n$code")
+
+        // El validador de siempre también cae en el paquete correcto.
+        assertTrue("package t;" in result.generated("InnerValidator.java")!!.readText())
     }
 }
