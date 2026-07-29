@@ -95,6 +95,40 @@ public annotation class Positive(val message: String = "")
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
 public annotation class Negative(val message: String = "")
 
+/** Positivo o cero (>= 0). `code = "positiveOrZero"`. */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class PositiveOrZero(val message: String = "")
+
+/** Negativo o cero (<= 0). `code = "negativeOrZero"`. */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class NegativeOrZero(val message: String = "")
+
+/**
+ * Como máximo [integer] dígitos enteros y [fraction] decimales. `code = "digits"`.
+ *
+ * Aplica a enteros (`Int`/`Long`/`Short`/`Byte`), `String`, `BigDecimal` y `BigInteger`.
+ * **No admite `Double`/`Float`**, igual que la especificación de Jakarta: su representación
+ * binaria no tiene un número exacto de dígitos decimales, así que contarlos daría resultados
+ * dependientes del redondeo.
+ */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class Digits(val integer: Int, val fraction: Int, val message: String = "")
+
+// ── Booleano ───────────────────────────────────────────────────────────────────
+
+/** Debe ser `true`. `code = "assertTrue"`. */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class AssertTrue(val message: String = "")
+
+/** Debe ser `false`. `code = "assertFalse"`. */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class AssertFalse(val message: String = "")
+
 // ── Temporal (Instant) ─────────────────────────────────────────────────────────
 
 /** Debe ser anterior a ahora. Aplica a `kotlinx.datetime.Instant` o `java.time.Instant`. `code = "past"`. */
@@ -107,9 +141,29 @@ public annotation class Past(val message: String = "")
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
 public annotation class Future(val message: String = "")
 
+/** Anterior a ahora o ahora mismo. `code = "pastOrPresent"`. */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class PastOrPresent(val message: String = "")
+
+/** Posterior a ahora o ahora mismo. `code = "futureOrPresent"`. */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class FutureOrPresent(val message: String = "")
+
 // ── Presencia ────────────────────────────────────────────────────────────────
 
 /** No nulo (para tipos que no lo garantizan, p. ej. plataformas Java). `code = "notNull"`. */
 @Retention(AnnotationRetention.SOURCE)
 @Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
 public annotation class NotNull(val message: String = "")
+
+/**
+ * Debe ser nulo. `code = "null"`.
+ *
+ * Sobre una propiedad no-nullable de Kotlin es contradictorio y el procesador lo rechaza:
+ * su utilidad está en campos Java o en tipos `T?` que solo deben venir vacíos en cierto flujo.
+ */
+@Retention(AnnotationRetention.SOURCE)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.ANNOTATION_CLASS, AnnotationTarget.TYPE, AnnotationTarget.FIELD, AnnotationTarget.FUNCTION)
+public annotation class Null(val message: String = "")

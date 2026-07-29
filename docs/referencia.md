@@ -39,7 +39,15 @@ nullable, `this.f?.let { v -> ... }`):
 | `@DecimalMax(v)`   | `... compareTo(...) > 0 ... "decimalMax"`                                        |
 | `@Positive`        | `> 0` en el tipo propio → `"positive"`                                           |
 | `@Negative`        | `< 0` en el tipo propio → `"negative"`                                           |
+| `@PositiveOrZero`  | `>= 0` en el tipo propio → `"positiveOrZero"`                                    |
+| `@NegativeOrZero`  | `<= 0` en el tipo propio → `"negativeOrZero"`                                    |
+| `@AssertTrue`      | `if (!v) violations += Violation("f", "assertTrue")` (solo `Boolean`)            |
+| `@AssertFalse`     | `if (v) violations += Violation("f", "assertFalse")` (solo `Boolean`)            |
+| `@Digits(i,f)`     | `if (Digits.exceeds(v.toString(), i, f)) ... "digits"` (params: integer,fraction) |
+| `@PastOrPresent`   | violación si el instante está en el futuro → `"pastOrPresent"`                   |
+| `@FutureOrPresent` | violación si el instante está en el pasado → `"futureOrPresent"`                 |
 | `@NotNull`         | `if (this.f == null) violations += Violation("f", "notNull")` (fuera del bloque de valor presente) |
+| `@Null`            | `if (this.f != null) violations += Violation("f", "null")` (idem; error si el tipo no admite null) |
 
 **Comparación numérica por tipo (sin pérdida de precisión):** NO se usa `toDouble`. Según el
 tipo de la propiedad:

@@ -61,6 +61,53 @@ class ValidationProcessorTest {
         assertEquals("email", bad["email"])
     }
 
+    /**
+     * Paridad de la ruta Java con la de KSP para los constraints alineados con Jakarta.
+     * Importa más que en Kotlin: aquí `boolean`/`int` son primitivos y `String` es nullable,
+     * así que las comprobaciones de aplicabilidad recorren otro camino.
+     */
+    @Test
+    fun `record Java - constraints alineados con Jakarta`() {
+        val cl = compile(
+            mapOf(
+                "t/Enrolment.java" to """
+                    package t;
+                    import dev.kvalid.annotations.*;
+                    import java.time.Instant;
+                    @Validated
+                    public record Enrolment(
+                        @AssertTrue boolean acceptedTerms,
+                        @AssertFalse boolean banned,
+                        @PositiveOrZero int credits,
+                        @NegativeOrZero int balance,
+                        @Digits(integer = 4, fraction = 2) String amount,
+                        @Null String adminNote,
+                        @PastOrPresent Instant createdAt,
+                        @FutureOrPresent Instant expiresAt
+                    ) {}
+                """.trimIndent(),
+            ),
+        )
+        val past = java.time.Instant.now().minusSeconds(3600)
+        val future = java.time.Instant.now().plusSeconds(3600)
+        fun obj(
+            accepted: Boolean = true, banned: Boolean = false, credits: Int = 0, balance: Int = 0,
+            amount: String = "1234.56", note: String? = null,
+            created: java.time.Instant = past, expires: java.time.Instant = future,
+        ) = cl.new("t.Enrolment", accepted, banned, credits, balance, amount, note, created, expires)
+
+        assertTrue(cl.violations("t.Enrolment", obj()).isEmpty(), "el caso válido no debe violar nada")
+
+        assertEquals(listOf("assertTrue"), cl.violations("t.Enrolment", obj(accepted = false)).map { it.code })
+        assertEquals(listOf("assertFalse"), cl.violations("t.Enrolment", obj(banned = true)).map { it.code })
+        assertEquals(listOf("positiveOrZero"), cl.violations("t.Enrolment", obj(credits = -1)).map { it.code })
+        assertEquals(listOf("negativeOrZero"), cl.violations("t.Enrolment", obj(balance = 1)).map { it.code })
+        assertEquals(listOf("digits"), cl.violations("t.Enrolment", obj(amount = "12345.6")).map { it.code })
+        assertEquals(listOf("null"), cl.violations("t.Enrolment", obj(note = "algo")).map { it.code })
+        assertEquals(listOf("pastOrPresent"), cl.violations("t.Enrolment", obj(created = future)).map { it.code })
+        assertEquals(listOf("futureOrPresent"), cl.violations("t.Enrolment", obj(expires = past)).map { it.code })
+    }
+
     @Test
     fun `cascada anidada Validated en Java`() {
         val cl = compile(

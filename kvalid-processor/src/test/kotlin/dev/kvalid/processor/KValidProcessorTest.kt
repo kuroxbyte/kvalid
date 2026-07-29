@@ -330,4 +330,74 @@ class KValidProcessorTest {
         assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
         assertTrue("kvalid.constraint.type" in result.messages, result.messages)
     }
+
+    @Test
+    fun `Digits sobre Double es error y explica por que`() {
+        val result = compile(
+            """
+            package t
+            import dev.kvalid.annotations.Validated
+            import dev.kvalid.annotations.Digits
+            @Validated
+            data class Bad(@Digits(integer = 3, fraction = 2) val price: Double)
+            """.trimIndent(),
+        )
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue("kvalid.constraint.type" in result.messages, result.messages)
+        // El mensaje genérico ("se esperaba un tipo numérico") despistaría: Double SÍ es numérico.
+        assertTrue("coma flotante" in result.messages, result.messages)
+    }
+
+    @Test
+    fun `Digits sobre BigDecimal usa la forma plana, no la cientifica`() {
+        val r = compileOk(
+            """
+            package t
+            import dev.kvalid.annotations.Validated
+            import dev.kvalid.annotations.Digits
+            import java.math.BigDecimal
+            @Validated
+            data class Money(@Digits(integer = 3, fraction = 0) val amount: BigDecimal)
+            """.trimIndent(),
+        )
+        // BigDecimal("1E+2").toString() == "1E+2" (no contable → violaría), pero
+        // toPlainString() == "100", que son 3 dígitos enteros y SÍ cabe. El test distingue
+        // las dos rutas: si el emisor usara toString(), esto fallaría.
+        val scientific = java.math.BigDecimal("1E+2")
+        assertEquals("1E+2", scientific.toString(), "premisa del test")
+        assertTrue(r.validate("t.Money", r.instance("t.Money", scientific)).isValid)
+
+        val tooLong = java.math.BigDecimal("1E+4") // 10000 → 5 dígitos enteros
+        assertEquals(listOf("digits"), r.validate("t.Money", r.instance("t.Money", tooLong)).violations().map { it.code })
+    }
+
+    @Test
+    fun `Null sobre una propiedad no-nullable es error de compilacion`() {
+        val result = compile(
+            """
+            package t
+            import dev.kvalid.annotations.Validated
+            import dev.kvalid.annotations.Null
+            @Validated
+            data class Bad(@Null val note: String)
+            """.trimIndent(),
+        )
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue("kvalid.constraint.type" in result.messages, result.messages)
+    }
+
+    @Test
+    fun `AssertTrue sobre un no-Boolean es error de compilacion`() {
+        val result = compile(
+            """
+            package t
+            import dev.kvalid.annotations.Validated
+            import dev.kvalid.annotations.AssertTrue
+            @Validated
+            data class Bad(@AssertTrue val name: String)
+            """.trimIndent(),
+        )
+        assertEquals(KotlinCompilation.ExitCode.COMPILATION_ERROR, result.exitCode)
+        assertTrue("kvalid.constraint.type" in result.messages, result.messages)
+    }
 }

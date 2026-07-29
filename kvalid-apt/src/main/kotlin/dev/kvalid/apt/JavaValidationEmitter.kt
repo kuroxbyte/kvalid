@@ -44,6 +44,7 @@ public class JavaValidationEmitter {
         val JPATTERN = ClassName.get("java.util.regex", "Pattern")
         val BIG_DECIMAL = ClassName.get("java.math", "BigDecimal")
         val CONTEXT = ClassName.get(RUNTIME_PKG, "ValidationContext")
+        val DIGITS = ClassName.get(RUNTIME_PKG, "Digits")
     }
 
     public fun emit(model: ValidationModel, accessors: Map<String, String>): GeneratedFile {
@@ -105,7 +106,10 @@ public class JavaValidationEmitter {
         field.constraints.filterIsInstance<Constraint.NotNull>().forEach { c ->
             b.addStatement("if (obj.\$L == null) violations.add(\$L)", acc, violation(n, "notNull", null, c.message))
         }
-        val supported = field.constraints.filter { it !is Constraint.NotNull }
+        field.constraints.filterIsInstance<Constraint.Null>().forEach { c ->
+            b.addStatement("if (obj.\$L != null) violations.add(\$L)", acc, violation(n, "null", null, c.message))
+        }
+        val supported = field.constraints.filter { it !is Constraint.NotNull && it !is Constraint.Null }
         val hasElements = field.elementConstraints.isNotEmpty() || field.elementCascade
         if (supported.isEmpty() && !field.cascade && !hasElements) return
 
@@ -129,7 +133,7 @@ public class JavaValidationEmitter {
                 b.addStatement("int \$L = 0", idx)
                 b.beginControlFlow("for (var \$L : \$L)", e, v)
                 val vioE = violationFactory(CodeBlock.of("\$S + \$L + \$S", "$n[", idx, "]")) // path = "campo[i]"
-                field.elementConstraints.filter { it !is Constraint.NotNull }.forEach { c ->
+                field.elementConstraints.filter { it !is Constraint.NotNull && it !is Constraint.Null }.forEach { c ->
                     emitCheck(b, elemType, c, e, n, vioE)
                 }
                 if (field.elementCascade) {
@@ -191,9 +195,20 @@ public class JavaValidationEmitter {
             is Constraint.Negative -> b.addStatement(IF_ADD_VIOLATION, sign(type, v, positive = false), vio("negative", null, c.message))
             is Constraint.Past -> b.addStatement("if (!\$L.isBefore(java.time.Instant.now())) violations.add(\$L)", v, vio("past", null, c.message))
             is Constraint.Future -> b.addStatement("if (!\$L.isAfter(java.time.Instant.now())) violations.add(\$L)", v, vio("future", null, c.message))
+            is Constraint.PastOrPresent -> b.addStatement("if (\$L.isAfter(java.time.Instant.now())) violations.add(\$L)", v, vio("pastOrPresent", null, c.message))
+            is Constraint.FutureOrPresent -> b.addStatement("if (\$L.isBefore(java.time.Instant.now())) violations.add(\$L)", v, vio("futureOrPresent", null, c.message))
+            is Constraint.PositiveOrZero -> b.addStatement(IF_ADD_VIOLATION, strictlySigned(type, v, negative = true), vio("positiveOrZero", null, c.message))
+            is Constraint.NegativeOrZero -> b.addStatement(IF_ADD_VIOLATION, strictlySigned(type, v, negative = false), vio("negativeOrZero", null, c.message))
+            is Constraint.AssertTrue -> b.addStatement("if (!\$L) violations.add(\$L)", v, vio("assertTrue", null, c.message))
+            is Constraint.AssertFalse -> b.addStatement(IF_ADD_VIOLATION, v, vio("assertFalse", null, c.message))
+            is Constraint.Digits -> b.addStatement(
+                "if (\$T.INSTANCE.exceeds(\$L, \$L, \$L)) violations.add(\$L)",
+                DIGITS, digitsSource(type, v), c.integer, c.fraction,
+                vio("digits", CodeBlock.of("\$T.of(\$S, \$L, \$S, \$L)", MAP, "integer", c.integer, "fraction", c.fraction), c.message),
+            )
             // Custom: instancia el validador Java (constructor sin args) y empuja al ctx compartido.
             is Constraint.Custom -> b.addStatement("new \$T().validate(\$L, \$S, ctx, \$L)", ClassName.bestGuess(c.validatorFqn), v, n, paramsJava(c.params))
-            is Constraint.NotNull -> Unit
+            is Constraint.NotNull, is Constraint.Null -> Unit
         }
     }
 
@@ -240,6 +255,23 @@ public class JavaValidationEmitter {
             t.qualifiedName in FLOATING -> "$v $op 0.0"
             else -> "$v $op 0L"
         }
+    }
+
+    /** Violación de `@PositiveOrZero` (negativo estricto) o de `@NegativeOrZero` (positivo estricto). */
+    private fun strictlySigned(t: TypeRef, v: String, negative: Boolean): String {
+        val op = if (negative) "<" else ">"
+        return when {
+            t.qualifiedName == "java.math.BigDecimal" || t.qualifiedName == "java.math.BigInteger" -> "$v.signum() $op 0"
+            t.qualifiedName in FLOATING -> "$v $op 0.0"
+            else -> "$v $op 0L"
+        }
+    }
+
+    /** Ver `digitsSource` del emisor Kotlin: BigDecimal.toString() puede ser científico. */
+    private fun digitsSource(t: TypeRef, v: String): String = when {
+        t.isString() -> v
+        t.qualifiedName == "java.math.BigDecimal" -> "$v.toPlainString()"
+        else -> "String.valueOf($v)"
     }
 
     private fun validatorFqn(t: TypeRef): ClassName {

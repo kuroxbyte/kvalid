@@ -23,6 +23,14 @@ public object ValidationNames {
     public const val POSITIVE: String = "dev.kvalid.annotations.Positive"
     public const val NEGATIVE: String = "dev.kvalid.annotations.Negative"
     public const val NOT_NULL: String = "dev.kvalid.annotations.NotNull"
+    public const val NULL: String = "dev.kvalid.annotations.Null"
+    public const val POSITIVE_OR_ZERO: String = "dev.kvalid.annotations.PositiveOrZero"
+    public const val NEGATIVE_OR_ZERO: String = "dev.kvalid.annotations.NegativeOrZero"
+    public const val DIGITS: String = "dev.kvalid.annotations.Digits"
+    public const val ASSERT_TRUE: String = "dev.kvalid.annotations.AssertTrue"
+    public const val ASSERT_FALSE: String = "dev.kvalid.annotations.AssertFalse"
+    public const val PAST_OR_PRESENT: String = "dev.kvalid.annotations.PastOrPresent"
+    public const val FUTURE_OR_PRESENT: String = "dev.kvalid.annotations.FutureOrPresent"
 }
 
 public object ValidationDiagnostics {
@@ -54,6 +62,14 @@ public sealed interface Constraint {
     public data class Positive(override val message: String = "") : Constraint
     public data class Negative(override val message: String = "") : Constraint
     public data class NotNull(override val message: String = "") : Constraint
+    public data class Null(override val message: String = "") : Constraint
+    public data class PositiveOrZero(override val message: String = "") : Constraint
+    public data class NegativeOrZero(override val message: String = "") : Constraint
+    public data class Digits(val integer: Int, val fraction: Int, override val message: String = "") : Constraint
+    public data class AssertTrue(override val message: String = "") : Constraint
+    public data class AssertFalse(override val message: String = "") : Constraint
+    public data class PastOrPresent(override val message: String = "") : Constraint
+    public data class FutureOrPresent(override val message: String = "") : Constraint
 
     /**
      * Constraint reutilizable definido por el usuario: una anotación meta-anotada con

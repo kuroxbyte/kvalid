@@ -119,7 +119,23 @@ public class ValidationModelBuilder(
             ValidationNames.FUTURE -> requireInstant(prop, "@Future") { Constraint.Future(msg) }
             ValidationNames.POSITIVE -> requireNumeric(prop, "@Positive") { Constraint.Positive(msg) }
             ValidationNames.NEGATIVE -> requireNumeric(prop, "@Negative") { Constraint.Negative(msg) }
+            ValidationNames.POSITIVE_OR_ZERO -> requireNumeric(prop, "@PositiveOrZero") { Constraint.PositiveOrZero(msg) }
+            ValidationNames.NEGATIVE_OR_ZERO -> requireNumeric(prop, "@NegativeOrZero") { Constraint.NegativeOrZero(msg) }
+            ValidationNames.DIGITS -> requireDigitsTarget(prop) {
+                val integer = ann.intArg("integer", 0)
+                val fraction = ann.intArg("fraction", 0)
+                if (integer < 0 || fraction < 0) {
+                    argsError(prop, "@Digits no admite cuentas negativas (integer=$integer, fraction=$fraction).")
+                } else {
+                    Constraint.Digits(integer, fraction, msg)
+                }
+            }
+            ValidationNames.ASSERT_TRUE -> requireBoolean(prop, "@AssertTrue") { Constraint.AssertTrue(msg) }
+            ValidationNames.ASSERT_FALSE -> requireBoolean(prop, "@AssertFalse") { Constraint.AssertFalse(msg) }
+            ValidationNames.PAST_OR_PRESENT -> requireInstant(prop, "@PastOrPresent") { Constraint.PastOrPresent(msg) }
+            ValidationNames.FUTURE_OR_PRESENT -> requireInstant(prop, "@FutureOrPresent") { Constraint.FutureOrPresent(msg) }
             ValidationNames.NOT_NULL -> Constraint.NotNull(msg)
+            ValidationNames.NULL -> requireNullable(prop) { Constraint.Null(msg) }
             else -> customValidatorFqn(ann)?.let { Constraint.Custom(it, primitiveParams(ann), msg) }
         }
     }
@@ -158,6 +174,43 @@ public class ValidationModelBuilder(
 
     private inline fun requireInstant(prop: PropertyModel, name: String, make: () -> Constraint?): Constraint? =
         if (prop.type.qualifiedName in INSTANT_TYPES) make() else mismatch(prop, name, "un Instant")
+
+    private inline fun requireBoolean(prop: PropertyModel, name: String, make: () -> Constraint?): Constraint? =
+        if (prop.type.qualifiedName == "kotlin.Boolean") make() else mismatch(prop, name, "Boolean")
+
+    /**
+     * `@Digits` cuenta dígitos decimales, así que solo admite tipos que TIENEN una
+     * representación decimal exacta. `Double`/`Float` se rechazan con un mensaje propio —
+     * el genérico ("se esperaba...") haría pensar que el tipo no es numérico, cuando el
+     * problema es justo el contrario.
+     */
+    private inline fun requireDigitsTarget(prop: PropertyModel, make: () -> Constraint?): Constraint? = when {
+        prop.type.qualifiedName in DIGITS_TYPES -> make()
+        prop.type.qualifiedName in INEXACT_TYPES -> {
+            reporter.error(
+                ValidationDiagnostics.CONSTRAINT_TYPE,
+                "@Digits no aplica a '${prop.name}: ${prop.type.qualifiedName}': el binario de coma " +
+                    "flotante no tiene un número exacto de dígitos decimales. Usa BigDecimal o String.",
+                prop.source,
+            )
+            null
+        }
+        else -> mismatch(prop, "@Digits", "un entero, String, BigDecimal o BigInteger")
+    }
+
+    /** `@Null` sobre un tipo que no admite null (no-nullable de Kotlin, primitivo de Java). */
+    private inline fun requireNullable(prop: PropertyModel, make: () -> Constraint?): Constraint? =
+        if (prop.type.nullable) {
+            make()
+        } else {
+            reporter.error(
+                ValidationDiagnostics.CONSTRAINT_TYPE,
+                "@Null sobre '${prop.name}: ${prop.type.qualifiedName}', que nunca puede ser null: " +
+                    "la validación fallaría siempre.",
+                prop.source,
+            )
+            null
+        }
 
     private fun mismatch(prop: PropertyModel, constraint: String, expected: String): Constraint? {
         reporter.error(
@@ -226,5 +279,13 @@ public class ValidationModelBuilder(
             "java.math.BigDecimal", "java.math.BigInteger",
         )
         val INSTANT_TYPES = setOf("kotlinx.datetime.Instant", "java.time.Instant")
+
+        /** Coma flotante binaria: sin número exacto de dígitos decimales (ver requireDigitsTarget). */
+        val INEXACT_TYPES = setOf("kotlin.Double", "kotlin.Float")
+
+        val DIGITS_TYPES = setOf(
+            "kotlin.Int", "kotlin.Long", "kotlin.Short", "kotlin.Byte",
+            "kotlin.String", "java.math.BigDecimal", "java.math.BigInteger",
+        )
     }
 }

@@ -28,6 +28,7 @@ internal class ValidationEmitter {
         val VIOLATION = ClassName(RUNTIME_PKG, "Violation")
         val RESULT = ClassName(RUNTIME_PKG, "ValidationResult")
         val CONTEXT = ClassName(RUNTIME_PKG, "ValidationContext")
+        val DIGITS = ClassName(RUNTIME_PKG, "Digits")
         val REGEX = ClassName("kotlin.text", "Regex")
     }
 
@@ -81,7 +82,12 @@ internal class ValidationEmitter {
             b.addStatement("if (this.%N == null) violations += %L", n, violation(CodeBlock.of("%S", n), "notNull", null, c.message))
         }
 
-        val hasValueChecks = field.constraints.any { it !is Constraint.NotNull } || field.cascade
+        field.constraints.filterIsInstance<Constraint.Null>().forEach { c ->
+            b.addStatement("if (this.%N != null) violations += %L", n, violation(CodeBlock.of("%S", n), "null", null, c.message))
+        }
+
+        // NotNull y Null hablan de la REFERENCIA, así que van fuera del bloque de valor presente.
+        val hasValueChecks = field.constraints.any { it !is Constraint.NotNull && it !is Constraint.Null } || field.cascade
         if (hasValueChecks) {
             b.beginControlFlow(if (field.type.nullable) "this.%N?.let { v ->" else "this.%N.let { v ->", n)
             field.constraints.forEach { c -> checkFor(b, field, field.type, c, "v", CodeBlock.of("%S", n)) }
@@ -140,10 +146,49 @@ internal class ValidationEmitter {
             is Constraint.Future -> b.addStatement(IF_ADD_VIOLATION, temporal(type, value, past = false), violation(path, "future", null, c.message))
             is Constraint.Positive -> b.addStatement(IF_ADD_VIOLATION, nonPositive(type, value), violation(path, "positive", null, c.message))
             is Constraint.Negative -> b.addStatement(IF_ADD_VIOLATION, nonNegative(type, value), violation(path, "negative", null, c.message))
+            is Constraint.PositiveOrZero -> b.addStatement(IF_ADD_VIOLATION, strictlySigned(type, value, negative = true), violation(path, "positiveOrZero", null, c.message))
+            is Constraint.NegativeOrZero -> b.addStatement(IF_ADD_VIOLATION, strictlySigned(type, value, negative = false), violation(path, "negativeOrZero", null, c.message))
+            is Constraint.PastOrPresent -> b.addStatement(IF_ADD_VIOLATION, temporalOrPresent(type, value, past = true), violation(path, "pastOrPresent", null, c.message))
+            is Constraint.FutureOrPresent -> b.addStatement(IF_ADD_VIOLATION, temporalOrPresent(type, value, past = false), violation(path, "futureOrPresent", null, c.message))
+            is Constraint.AssertTrue -> b.addStatement("if (!%L) violations += %L", value, violation(path, "assertTrue", null, c.message))
+            is Constraint.AssertFalse -> b.addStatement(IF_ADD_VIOLATION, value, violation(path, "assertFalse", null, c.message))
+            is Constraint.Digits -> b.addStatement(
+                "if (%T.exceeds(%L, %L, %L)) violations += %L",
+                DIGITS, digitsSource(type, value), c.integer, c.fraction,
+                violation(path, "digits", CodeBlock.of("mapOf(%S to %L, %S to %L)", "integer", c.integer, "fraction", c.fraction), c.message),
+            )
             is Constraint.Custom -> b.addStatement("%L.validate(%L, %S, ctx, %L)", c.validatorFqn, value, n, paramsLiteral(c.params))
-            is Constraint.NotNull -> Unit
+            is Constraint.NotNull, is Constraint.Null -> Unit
         }
     }
+
+    /**
+     * Texto decimal para `@Digits`. `BigDecimal.toString()` puede salir en notación
+     * científica (`1E+10`), que no es contable: para ese tipo se fuerza `toPlainString()`.
+     */
+    private fun digitsSource(t: TypeRef, v: String): String = when (t.qualifiedName) {
+        "kotlin.String" -> v
+        "java.math.BigDecimal" -> "$v.toPlainString()"
+        else -> "$v.toString()"
+    }
+
+    /** Violación de `@PositiveOrZero` (negativo estricto) o de `@NegativeOrZero` (positivo estricto). */
+    private fun strictlySigned(t: TypeRef, v: String, negative: Boolean): String {
+        val op = if (negative) "<" else ">"
+        return when (numericCategory(t)) {
+            NumCat.INTEGER -> "$v.toLong() $op 0L"
+            NumCat.FLOATING -> "$v.toDouble() $op 0.0"
+            NumCat.BIG_INTEGER, NumCat.BIG_DECIMAL -> "$v.signum() $op 0"
+        }
+    }
+
+    /** Violación de `@PastOrPresent` (está en el futuro) o `@FutureOrPresent` (está en el pasado). */
+    private fun temporalOrPresent(t: TypeRef, v: String, past: Boolean): String =
+        if (t.qualifiedName == "java.time.Instant") {
+            if (past) "$v.isAfter(java.time.Instant.now())" else "$v.isBefore(java.time.Instant.now())"
+        } else {
+            if (past) "$v > kotlinx.datetime.Clock.System.now()" else "$v < kotlinx.datetime.Clock.System.now()"
+        }
 
     private fun violation(path: CodeBlock, code: String, params: CodeBlock?, message: String): CodeBlock {
         val cb = CodeBlock.builder().add("%T(%L, %S", VIOLATION, path, code)
