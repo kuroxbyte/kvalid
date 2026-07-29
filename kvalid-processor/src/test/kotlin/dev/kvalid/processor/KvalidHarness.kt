@@ -5,19 +5,27 @@ package dev.kvalid.processor
 import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.SourceFile
+import com.tschuchort.compiletesting.kspProcessorOptions
 import com.tschuchort.compiletesting.symbolProcessorProviders
 import com.tschuchort.compiletesting.useKsp2
 import dev.kvalid.runtime.ValidationResult
 import dev.kvalid.runtime.Violation
 
-internal fun compile(source: String): JvmCompilationResult =
+internal fun compile(source: String): JvmCompilationResult = compilation(source).compile()
+
+/** La [KotlinCompilation] configurada, para tests que además inspeccionan lo generado. */
+internal fun compilation(
+    source: String,
+    options: Map<String, String> = emptyMap(),
+): KotlinCompilation =
     KotlinCompilation().apply {
         sources = listOf(SourceFile.kotlin("Input.kt", source))
         useKsp2()
         symbolProcessorProviders += KvalidProcessorProvider()
+        kspProcessorOptions = options.toMutableMap()
         inheritClassPath = true
         messageOutputStream = System.out
-    }.compile()
+    }
 
 internal fun compileOk(source: String): JvmCompilationResult {
     val result = compile(source)

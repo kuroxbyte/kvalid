@@ -22,6 +22,9 @@ dependencies {
     testImplementation(libs.kctfork.ksp)
     testImplementation(project(":kvalid-runtime"))
     testImplementation(project(":kvalid-annotations"))
+    // Solo para los tests de codegen: el adaptador con componentModel=spring lleva
+    // @Component, así que debe estar en el classpath para que el generado COMPILE.
+    testImplementation(libs.spring.context)
     testImplementation(testFixtures(libs.genkit.ports))
 }
 

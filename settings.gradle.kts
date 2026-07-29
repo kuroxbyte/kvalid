@@ -36,6 +36,7 @@ include(
     ":kvalid-i18n",
     ":kvalid-ktor",
     ":kvalid-spring",
+    ":kvalid-spring-boot-starter",
     ":kvalid-benchmarks",
     ":kvalid-apt",
     ":kvalid-samples",

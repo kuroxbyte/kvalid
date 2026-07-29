@@ -1,0 +1,33 @@
+plugins {
+    alias(libs.plugins.kotlin.jvm)
+}
+
+kotlin {
+    jvmToolchain(17)
+    explicitApi()
+}
+
+// Starter de Spring Boot: capa fina de auto-configuración sobre kvalid-spring (que no conoce
+// Boot). Convención de terceros: <lib>-spring-boot-starter (spring-boot-starter-* es de Spring).
+dependencies {
+    api(project(":kvalid-spring"))
+    api(libs.spring.boot.autoconfigure)
+
+    // El starter sirve a servlet Y a reactivo: cada bloque de configuración se activa por
+    // @ConditionalOnClass, así que no se arrastra el stack contrario al consumidor.
+    compileOnly(libs.spring.webmvc)
+    compileOnly(libs.spring.webflux)
+
+    testImplementation(libs.kotlin.test)
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.launcher)
+    testImplementation(libs.spring.boot.starter.test)
+    testImplementation(libs.spring.boot.starter.web)
+    testImplementation(libs.spring.boot.starter.webflux)
+    // Para el test de coexistencia: Hibernate Validator (Jakarta) junto a kvalid.
+    testImplementation(libs.spring.boot.starter.validation)
+    // Jackson necesita el módulo Kotlin para deserializar data classes sin no-arg ctor.
+    testImplementation(libs.jackson.module.kotlin)
+}
+
+tasks.test { useJUnitPlatform() }

@@ -13,6 +13,8 @@ kover = "0.9.1"
 hibernate-validator = "8.0.1.Final"
 expressly = "5.0.0"
 spring = "6.1.14"
+springBoot = "3.3.5"   # Boot 3.3.5 va con Spring Framework 6.1.14
+jacksonKotlin = "2.17.2"  # alineado con el BOM de Boot 3.3.5
 
 [libraries]
 genkit-model = { module = "io.github.kuroxbyte:genkit-model", version.ref = "genkit" }
@@ -36,6 +38,15 @@ ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref 
 hibernate-validator = { module = "org.hibernate.validator:hibernate-validator", version.ref = "hibernate-validator" }
 expressly = { module = "org.glassfish.expressly:expressly", version.ref = "expressly" }
 spring-web = { module = "org.springframework:spring-web", version.ref = "spring" }
+spring-context = { module = "org.springframework:spring-context", version.ref = "spring" }
+spring-webmvc = { module = "org.springframework:spring-webmvc", version.ref = "spring" }
+spring-webflux = { module = "org.springframework:spring-webflux", version.ref = "spring" }
+spring-boot-autoconfigure = { module = "org.springframework.boot:spring-boot-autoconfigure", version.ref = "springBoot" }
+spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-starter-web", version.ref = "springBoot" }
+spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "springBoot" }
+spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "springBoot" }
+spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
+jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jacksonKotlin" }
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

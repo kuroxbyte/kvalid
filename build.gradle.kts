@@ -24,6 +24,7 @@ dependencies {
     kover(project(":kvalid-i18n"))
     kover(project(":kvalid-ktor"))
     kover(project(":kvalid-spring"))
+    kover(project(":kvalid-spring-boot-starter"))
     kover(project(":kvalid-apt"))
 }
 
@@ -39,7 +40,8 @@ val publishedModules = mapOf(
     "kvalid-apt" to "kvalid Java variant (javac APT): @Validated Java classes -> XValidator.validate(obj)",
     "kvalid-i18n" to "kvalid i18n (KMP): MessageResolver — resolve code+params to text (optional)",
     "kvalid-ktor" to "kvalid Ktor integration: StatusPages.kvalid() -> 400 with the violations (optional)",
-    "kvalid-spring" to "kvalid Spring integration: @RestControllerAdvice -> 400 with the violations (optional)",
+    "kvalid-spring" to "kvalid Spring integration: Validator SPI for native @Valid (MVC + WebFlux) and @RestControllerAdvice -> 400 (optional)",
+    "kvalid-spring-boot-starter" to "kvalid Spring Boot starter: auto-configuration wiring @Valid for Spring MVC and WebFlux",
 )
 
 configure(subprojects.filter { it.name in publishedModules.keys }) {
