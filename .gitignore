@@ -1,6 +1,10 @@
 # Gradle
 .gradle/
 build/
+# ...pero NUNCA el código fuente: un paquete que se llame `build`
+# (p. ej. dev.<lib>.core.build) casaba con la regla de arriba y quedaba fuera del repo.
+!src/**/build/
+!**/src/**/build/
 .kotlin/
 
 # IDE
