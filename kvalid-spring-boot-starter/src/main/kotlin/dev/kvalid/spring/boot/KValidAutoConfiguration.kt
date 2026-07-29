@@ -28,7 +28,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
  * `kvalid.componentModel=spring`), los indexa y registra el puente con el `Validator` SPI de
  * Spring — con lo que `@Valid @RequestBody` valida **nativamente en MVC y en WebFlux**.
  *
- * Todo es `@ConditionalOnMissingBean`: cualquier bean propio del usuario gana.
+ * Cada bean va con `@ConditionalOnMissingBean`: el del usuario siempre gana.
  */
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "kvalid", name = ["enabled"], havingValue = "true", matchIfMissing = true)
