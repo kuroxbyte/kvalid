@@ -1,7 +1,7 @@
 # KValid — guía de referencia
 
 Referencia por temas del comportamiento y del código generado. Para la visión general, ver
-el [README](../README.md).
+el [README](https://github.com/kuroxbyte/kvalid).
 
 ## La función generada
 
