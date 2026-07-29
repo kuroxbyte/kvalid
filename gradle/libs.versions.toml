@@ -47,6 +47,7 @@ spring-boot-starter-web = { module = "org.springframework.boot:spring-boot-start
 spring-boot-starter-webflux = { module = "org.springframework.boot:spring-boot-starter-webflux", version.ref = "springBoot" }
 spring-boot-starter-validation = { module = "org.springframework.boot:spring-boot-starter-validation", version.ref = "springBoot" }
 spring-boot-starter-test = { module = "org.springframework.boot:spring-boot-starter-test", version.ref = "springBoot" }
+kotlin-reflect = { module = "org.jetbrains.kotlin:kotlin-reflect", version.ref = "kotlin" }
 jackson-module-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jacksonKotlin" }
 jakarta-validation-api = { module = "jakarta.validation:jakarta.validation-api", version.ref = "jakartaValidation" }
 

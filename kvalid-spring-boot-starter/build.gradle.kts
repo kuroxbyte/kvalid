@@ -12,6 +12,11 @@ kotlin {
 dependencies {
     api(project(":kvalid-spring"))
     api(libs.spring.boot.autoconfigure)
+    // El binding por constructor de @ConfigurationProperties en Kotlin lo resuelve Boot con
+    // KotlinReflectionParameterNameDiscoverer: sin kotlin-reflect el arranque falla con
+    // NoClassDefFoundError. Aquí llegaba transitivamente SOLO al classpath de test, así que
+    // los tests pasaban y el usuario se lo habría comido.
+    implementation(libs.kotlin.reflect)
 
     // El starter sirve a servlet Y a reactivo: cada bloque de configuración se activa por
     // @ConditionalOnClass, así que no se arrastra el stack contrario al consumidor.
