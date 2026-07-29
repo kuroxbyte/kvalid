@@ -1,12 +1,12 @@
 package dev.kvalid.spring.boot
 
-import dev.kvalid.runtime.spi.KvalidValidator
+import dev.kvalid.runtime.spi.KValidator
 import dev.kvalid.spring.CompositeValidator
-import dev.kvalid.spring.KvalidExceptionHandler
-import dev.kvalid.spring.KvalidSpringValidator
-import dev.kvalid.spring.KvalidValidatorRegistry
-import dev.kvalid.spring.KvalidWebFluxConfigurer
-import dev.kvalid.spring.KvalidWebMvcConfigurer
+import dev.kvalid.spring.KValidExceptionHandler
+import dev.kvalid.spring.KValidSpringValidator
+import dev.kvalid.spring.KValidatorRegistry
+import dev.kvalid.spring.KValidWebFluxConfigurer
+import dev.kvalid.spring.KValidWebMvcConfigurer
 import org.springframework.beans.factory.ObjectProvider
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.autoconfigure.AutoConfiguration
@@ -32,25 +32,25 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
  */
 @AutoConfiguration
 @ConditionalOnProperty(prefix = "kvalid", name = ["enabled"], havingValue = "true", matchIfMissing = true)
-@EnableConfigurationProperties(KvalidProperties::class)
-public open class KvalidAutoConfiguration {
+@EnableConfigurationProperties(KValidProperties::class)
+public open class KValidAutoConfiguration {
 
     /** Índice de los adaptadores. Si no hay ninguno, queda vacío (no rompe el arranque). */
     @Bean
     @ConditionalOnMissingBean
     public open fun kvalidValidatorRegistry(
-        validators: ObjectProvider<KvalidValidator<*>>,
-    ): KvalidValidatorRegistry = KvalidValidatorRegistry(validators.orderedStream().toList())
+        validators: ObjectProvider<KValidator<*>>,
+    ): KValidatorRegistry = KValidatorRegistry(validators.orderedStream().toList())
 
     @Bean
     @ConditionalOnMissingBean
-    public open fun kvalidSpringValidator(registry: KvalidValidatorRegistry): KvalidSpringValidator =
-        KvalidSpringValidator(registry)
+    public open fun kvalidSpringValidator(registry: KValidatorRegistry): KValidSpringValidator =
+        KValidSpringValidator(registry)
 
     /** `ValidationException` (estilo explícito `validate().getOrThrow()`) → 400. */
     @Bean
     @ConditionalOnMissingBean
-    public open fun kvalidExceptionHandler(): KvalidExceptionHandler = KvalidExceptionHandler()
+    public open fun kvalidExceptionHandler(): KValidExceptionHandler = KValidExceptionHandler()
 
     /**
      * El validador que se registra como global. Si Boot ya expone `defaultValidator`
@@ -60,12 +60,12 @@ public open class KvalidAutoConfiguration {
     @Bean(KVALID_WEB_VALIDATOR)
     @ConditionalOnMissingBean(name = [KVALID_WEB_VALIDATOR])
     public open fun kvalidWebValidator(
-        kvalid: KvalidSpringValidator,
+        kvalid: KValidSpringValidator,
         @Qualifier("defaultValidator") defaultValidator: ObjectProvider<Validator>,
     ): CompositeValidator {
         // SIEMPRE se envuelve, aunque solo haya un delegado: si devolviera el propio
-        // KvalidSpringValidator, habría dos beans del mismo tipo (kvalidSpringValidator y
-        // kvalidWebValidator) y un `@Autowired KvalidSpringValidator` del usuario fallaría
+        // KValidSpringValidator, habría dos beans del mismo tipo (kvalidSpringValidator y
+        // kvalidWebValidator) y un `@Autowired KValidSpringValidator` del usuario fallaría
         // por ambigüedad. Envolver mantiene un bean por tipo y el comportamiento uniforme.
         val jakarta = defaultValidator.getIfAvailable()
         return CompositeValidator(listOfNotNull(kvalid, jakarta))
@@ -86,7 +86,7 @@ public open class KvalidAutoConfiguration {
         @ConditionalOnMissingBean
         public open fun kvalidWebMvcConfigurer(
             @Qualifier(KVALID_WEB_VALIDATOR) validator: Validator,
-        ): KvalidWebMvcConfigurer = KvalidWebMvcConfigurer(validator)
+        ): KValidWebMvcConfigurer = KValidWebMvcConfigurer(validator)
     }
 
     /** Reactivo (WebFlux). Mismo validador, distinta interfaz de configuración. */
@@ -104,7 +104,7 @@ public open class KvalidAutoConfiguration {
         @ConditionalOnMissingBean
         public open fun kvalidWebFluxConfigurer(
             @Qualifier(KVALID_WEB_VALIDATOR) validator: Validator,
-        ): KvalidWebFluxConfigurer = KvalidWebFluxConfigurer(validator)
+        ): KValidWebFluxConfigurer = KValidWebFluxConfigurer(validator)
     }
 
     public companion object {

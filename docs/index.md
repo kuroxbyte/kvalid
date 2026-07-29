@@ -1,4 +1,4 @@
-# kvalid
+# KValid
 
 Validación por anotaciones en **compile-time** y **sin reflexión**, estilo Jakarta pero
 Kotlin-first. Cada clase `@Validated` genera su validador; los constraints inválidos para el

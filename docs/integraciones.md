@@ -1,4 +1,4 @@
-# kvalid — integraciones
+# KValid — integraciones
 
 Las integraciones son módulos **opcionales**: el core nunca depende de un framework. Ambas
 traducen una `ValidationException` (lanzada por `getOrThrow()` sobre un `ValidationResult`) a un
@@ -43,7 +43,7 @@ dependencies {
 }
 ```
 
-`KvalidExceptionHandler` es un `@RestControllerAdvice` que convierte la `ValidationException` en
+`KValidExceptionHandler` es un `@RestControllerAdvice` que convierte la `ValidationException` en
 un `ResponseEntity` 400. Regístralo como bean (component-scan o `@Import`):
 
 ```kotlin
@@ -55,7 +55,7 @@ open class UserController {
         return mapOf("created" to user.name)
     }
 }
-// + registrar KvalidExceptionHandler:  @Import(KvalidExceptionHandler::class)
+// + registrar KValidExceptionHandler:  @Import(KValidExceptionHandler::class)
 ```
 
 ## i18n (`kvalid-i18n`)

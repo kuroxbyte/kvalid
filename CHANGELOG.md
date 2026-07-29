@@ -6,6 +6,32 @@ Versionado semántico.
 ## [Sin publicar]
 
 ### Añadido
+- **`@Valid` nativo en Spring MVC y WebFlux.** `KValidSpringValidator` implementa el
+  `Validator` SPI de Spring —el que alimenta `@Valid`—, así que un solo adaptador sirve a los
+  dos stacks: las violaciones entran en el `BindingResult` y Spring responde 400 sin que el
+  controller llame a `validate()`. Nuevo módulo **`kvalid-spring-boot-starter`** con
+  auto-configuración condicional por tipo de app, y `CompositeValidator` para que Jakarta Bean
+  Validation (Hibernate Validator) siga aplicándose si también se usa.
+- **Opción de codegen `kvalid.componentModel`** (`none` por defecto | `spring` | `serviceloader`),
+  en los **dos frontends**: KSP (`ksp { arg(...) }`) y APT (`-Akvalid.componentModel=...`).
+  Genera un adaptador `KValidator<T>` por tipo que **delega** en el `validate()` generado —
+  necesario porque una *extension function* no se puede despachar desde un borde que recibe
+  `Any`. Con `spring` lleva `@Component`; con `serviceloader`, `META-INF/services`.
+  En KSP solo se emite en target **JVM**, para no romper los demás targets KMP.
+
+### Cambiado (BREAKING)
+- **Renombrado a la marca `KValid`.** Las clases pasan de `Kvalid*` a `KValid*`, y el SPI queda
+  como **`KValidator`** (antes habría sido `KValidValidator`, que tartamudea). Afecta a tipos
+  ya publicados en 0.1.0: `KvalidExceptionHandler` → **`KValidExceptionHandler`** y
+  `KvalidProcessorProvider` → **`KValidProcessorProvider`**. **No se dejan alias deprecados**:
+  al actualizar hay que cambiar el import.
+  Lo que **no** cambia: los artefactos (`io.github.kuroxbyte:kvalid-*`), los paquetes
+  (`dev.kvalid.*`), las propiedades (`kvalid.enabled`, `kvalid.componentModel`) y la función
+  de Ktor `StatusPages.kvalid()`.
+- `KvalidProcessor` pasa a ser `internal` (era `public` en 0.1.0). El punto de entrada
+  soportado es `KValidProcessorProvider`, que es el que declara `META-INF/services`.
+
+### Añadido
 - **Variante Java (APT)** con paridad completa: **custom** (`@Constraint` con validador Java de
   constructor sin argumentos), **element-level** (`List<@NotBlank String>` vía anotaciones
   type-use) y **validadores de clase** (cross-field). Antes solo cubría los constraints

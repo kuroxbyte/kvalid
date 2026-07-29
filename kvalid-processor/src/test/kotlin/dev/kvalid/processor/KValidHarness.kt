@@ -21,7 +21,7 @@ internal fun compilation(
     KotlinCompilation().apply {
         sources = listOf(SourceFile.kotlin("Input.kt", source))
         useKsp2()
-        symbolProcessorProviders += KvalidProcessorProvider()
+        symbolProcessorProviders += KValidProcessorProvider()
         kspProcessorOptions = options.toMutableMap()
         inheritClassPath = true
         messageOutputStream = System.out

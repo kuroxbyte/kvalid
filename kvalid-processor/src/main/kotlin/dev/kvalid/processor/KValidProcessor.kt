@@ -17,7 +17,7 @@ import dev.kspkit.KspTypeResolver
 import dev.kvalid.core.build.ValidationModelBuilder
 import dev.kvalid.core.model.ValidationNames
 
-public class KvalidProcessorProvider : SymbolProcessorProvider {
+public class KValidProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment): SymbolProcessor {
         val raw = environment.options[ComponentModel.OPTION]
         val requested = ComponentModel.parse(raw)
@@ -33,7 +33,7 @@ public class KvalidProcessorProvider : SymbolProcessorProvider {
         val isJvm = environment.platforms.any { it is JvmPlatformInfo }
         val effective = (requested ?: ComponentModel.NONE).takeIf { isJvm } ?: ComponentModel.NONE
 
-        return KvalidProcessor(environment.codeGenerator, environment.logger, effective)
+        return KValidProcessor(environment.codeGenerator, environment.logger, effective)
     }
 }
 
@@ -45,7 +45,7 @@ public class KvalidProcessorProvider : SymbolProcessorProvider {
  * Con [componentModel] distinto de `NONE` emite además un adaptador por tipo
  * (ver [ValidatorAdapterEmitter]); en `SERVICE_LOADER` agrega el `META-INF/services`.
  */
-internal class KvalidProcessor(
+internal class KValidProcessor(
     private val codeGenerator: CodeGenerator,
     private val logger: KSPLogger,
     private val componentModel: ComponentModel = ComponentModel.NONE,
@@ -89,7 +89,7 @@ internal class KvalidProcessor(
         if (componentModel != ComponentModel.SERVICE_LOADER || adapterFqns.isEmpty()) return
         codeGenerator.createNewFileByPath(
             dependencies = Dependencies.ALL_FILES,
-            path = "META-INF/services/dev.kvalid.runtime.spi.KvalidValidator",
+            path = "META-INF/services/dev.kvalid.runtime.spi.KValidator",
             extensionName = "",
         ).bufferedWriter().use { out -> adapterFqns.forEach(out::appendLine) }
     }

@@ -1,7 +1,7 @@
 package dev.kvalid.spring.boot.webflux
 
 import dev.kvalid.spring.boot.CreateUser
-import dev.kvalid.spring.boot.CreateUserKvalidValidator
+import dev.kvalid.spring.boot.CreateUserKValidator
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
@@ -17,7 +17,7 @@ import kotlin.test.Test
 
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@Import(CreateUserKvalidValidator::class, WebFluxTestApp.UsersController::class)
+@Import(CreateUserKValidator::class, WebFluxTestApp.UsersController::class)
 open class WebFluxTestApp {
 
     @RestController
@@ -28,7 +28,7 @@ open class WebFluxTestApp {
 }
 
 /**
- * El mismo `KvalidSpringValidator` sirve a **WebFlux** sin cambios: lo único distinto es la
+ * El mismo `KValidSpringValidator` sirve a **WebFlux** sin cambios: lo único distinto es la
  * interfaz de configuración (`WebFluxConfigurer` en vez de `WebMvcConfigurer`). Aquí se
  * verifica que `@Valid` reactivo también produce el 400 con los campos.
  */
@@ -40,7 +40,7 @@ open class WebFluxTestApp {
         "spring.webflux.problemdetails.enabled=true",
     ],
 )
-class KvalidWebFluxIntegrationTest(@Autowired val client: WebTestClient) {
+class KValidWebFluxIntegrationTest(@Autowired val client: WebTestClient) {
 
     @Test
     fun `request invalido devuelve 400 con cuerpo ProblemDetail`() {

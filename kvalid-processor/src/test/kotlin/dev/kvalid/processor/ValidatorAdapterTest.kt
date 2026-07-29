@@ -6,7 +6,7 @@ import com.tschuchort.compiletesting.JvmCompilationResult
 import com.tschuchort.compiletesting.KotlinCompilation
 import com.tschuchort.compiletesting.kspSourcesDir
 import dev.kvalid.runtime.ValidationResult
-import dev.kvalid.runtime.spi.KvalidValidator
+import dev.kvalid.runtime.spi.KValidator
 import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -15,7 +15,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 /**
- * El adaptador `KvalidValidator<T>` (opción `kvalid.componentModel`) es lo que permite
+ * El adaptador `KValidator<T>` (opción `kvalid.componentModel`) es lo que permite
  * resolver "el validador de ESTE tipo" en un borde runtime. Aquí se verifica que se emite
  * solo cuando se pide, que compila, y que delega en el `validate()` generado.
  */
@@ -44,19 +44,19 @@ class ValidatorAdapterTest {
         val (compilation, _) = run(emptyMap())
         val names = compilation.generatedFiles().map { it.name }
         assertTrue(names.any { it == "AccountValidator.kt" }, "falta el validate() de siempre: $names")
-        assertFalse(names.any { it.contains("KvalidValidator") }, "no debería haber adaptador: $names")
+        assertFalse(names.any { it.contains("KValidator") }, "no debería haber adaptador: $names")
     }
 
     @Test
     fun `componentModel=spring genera adaptador anotado con @Component`() {
         val (compilation, _) = run(mapOf("kvalid.componentModel" to "spring"))
 
-        val adapter = compilation.generatedFiles().firstOrNull { it.name == "AccountKvalidValidator.kt" }
+        val adapter = compilation.generatedFiles().firstOrNull { it.name == "AccountKValidator.kt" }
         assertNotNull(adapter, "no se generó el adaptador: ${compilation.generatedFiles().map { it.name }}")
 
         val code = adapter.readText()
         assertTrue("org.springframework.stereotype.Component" in code || "@Component" in code, code)
-        assertTrue("KvalidValidator<Account>" in code, code)
+        assertTrue("KValidator<Account>" in code, code)
         assertTrue("value.validate()" in code, "el adaptador debe DELEGAR, no reimplementar:\n$code")
     }
 
@@ -64,8 +64,8 @@ class ValidatorAdapterTest {
     fun `el adaptador generado funciona en runtime y delega en el validate generado`() {
         val (_, result) = run(mapOf("kvalid.componentModel" to "spring"))
 
-        val adapterClass = result.classLoader.loadClass("t.AccountKvalidValidator")
-        val adapter = adapterClass.getDeclaredConstructor().newInstance() as KvalidValidator<Any>
+        val adapterClass = result.classLoader.loadClass("t.AccountKValidator")
+        val adapter = adapterClass.getDeclaredConstructor().newInstance() as KValidator<Any>
         val accountClass = result.classLoader.loadClass("t.Account")
 
         assertEquals(accountClass, adapter.type)
@@ -83,15 +83,15 @@ class ValidatorAdapterTest {
         val (compilation, _) = run(mapOf("kvalid.componentModel" to "serviceloader"))
         val files = compilation.generatedFiles()
 
-        val adapter = files.firstOrNull { it.name == "AccountKvalidValidator.kt" }
+        val adapter = files.firstOrNull { it.name == "AccountKValidator.kt" }
         assertNotNull(adapter, "no se generó el adaptador: ${files.map { it.name }}")
         assertFalse("@Component" in adapter.readText(), "sin Spring no debe llevar @Component")
 
         val services = compilation.kspSourcesDir.parentFile
             .walkTopDown()
-            .firstOrNull { it.isFile && it.name == "dev.kvalid.runtime.spi.KvalidValidator" }
+            .firstOrNull { it.isFile && it.name == "dev.kvalid.runtime.spi.KValidator" }
         assertNotNull(services, "falta META-INF/services: ${files.map { it.path }}")
-        assertEquals("t.AccountKvalidValidator", services.readText().trim())
+        assertEquals("t.AccountKValidator", services.readText().trim())
     }
 
     @Test
@@ -101,6 +101,6 @@ class ValidatorAdapterTest {
 
         assertEquals(KotlinCompilation.ExitCode.OK, result.exitCode, result.messages)
         assertTrue("kvalid.componentModel" in result.messages, "debe avisar del valor inválido")
-        assertFalse(compilation.generatedFiles().any { it.name.contains("KvalidValidator") })
+        assertFalse(compilation.generatedFiles().any { it.name.contains("KValidator") })
     }
 }

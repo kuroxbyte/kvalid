@@ -1,4 +1,4 @@
-site_name: kvalid
+site_name: KValid
 site_description: "Validación por anotaciones en compile-time y sin reflexión, estilo Jakarta (Kotlin KSP + Java APT)"
 repo_url: https://github.com/kuroxbyte/kvalid
 docs_dir: docs

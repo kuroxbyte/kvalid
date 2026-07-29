@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 
 /** Configuración del starter (prefijo `kvalid`). */
 @ConfigurationProperties(prefix = "kvalid")
-public data class KvalidProperties(
+public data class KValidProperties(
     /** Desactiva por completo la integración (`kvalid.enabled=false`). */
     val enabled: Boolean = true,
     val web: Web = Web(),

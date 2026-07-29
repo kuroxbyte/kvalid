@@ -1,4 +1,4 @@
-# kvalid
+# KValid
 
 Validación de data classes por anotaciones, generando el validador en compile-time y
 **sin reflexión**. Argumento que la competencia no puede dar: las mismas reglas compartidas
@@ -18,7 +18,7 @@ la compatibilidad GraalVM native-image) y precisión numérica exacta (comparaci
 propio, no `Double`). El build native-image real es un paso de CI (requiere GraalVM).
 
 Panorama: Konform/Akkurate/Kalidation/Valiktor son DSL o reflexión; Jakarta/Hibernate
-Validator es reflexión (el vocabulario de kvalid es el suyo, a propósito, para facilitar la
+Validator es reflexión (el vocabulario de KValid es el suyo, a propósito, para facilitar la
 migración); Micronaut valida en compile-time pero **acoplado a su framework** y solo JVM. El
 cuadrante *anotaciones + generación + cero reflexión* **standalone y KMP** está libre.
 
@@ -56,7 +56,7 @@ Requisitos: JDK 17+.
 | `kvalid-ktor`        | OPCIONAL: integración Ktor (`StatusPages.kvalid()` → 400 con las violaciones). |
 | `kvalid-spring`      | OPCIONAL: integración Spring (`@RestControllerAdvice` → 400 con las violaciones). |
 | `kvalid-apt`         | Variante **Java** (javac annotation processor): clases Java `@Validated` → `XValidator.validate(obj)`. Reutiliza kvalid-core; emite Java (JavaPoet). Paridad completa con KSP. |
-| `kvalid-benchmarks`  | JMH: kvalid (codegen) vs Hibernate Validator (reflexión). No se publica. |
+| `kvalid-benchmarks`  | JMH: KValid (codegen) vs Hibernate Validator (reflexión). No se publica. |
 | `kvalid-samples`     | Ejemplos EJECUTABLES (Kotlin/KSP + Java/APT + integración Ktor/Spring). `./gradlew :kvalid-samples:run`. No se publica. |
 | `kvalid-integration-tests` | Consumidor REAL end-to-end: aplica KSP y llama al `validate()` generado directamente (sin reflexión). No se publica. |
 | `kvalid-incremental-tests` | Incrementalidad de KSP (Gradle TestKit): un consumidor real verifica que tocar una clase ajena NO regenera el archivo. No se publica. |
@@ -294,7 +294,7 @@ post("/users") {
 ## Integración con Spring (módulo `kvalid-spring`)
 
 ```kotlin
-@Import(KvalidExceptionHandler::class)   // o component scan
+@Import(KValidExceptionHandler::class)   // o component scan
 class WebConfig
 
 @PostMapping("/users")
@@ -336,7 +336,7 @@ La única asimetría con Kotlin es intencional: un validador custom es un `objec
 ## Rendimiento
 
 Benchmark JMH (`./gradlew :kvalid-benchmarks:jmh`) validando un objeto válido, codegen vs
-reflexión — kvalid ~**9× más rápido** que Hibernate Validator:
+reflexión — KValid ~**9× más rápido** que Hibernate Validator:
 
 ```
 Benchmark                               Mode  Cnt    Score   Units

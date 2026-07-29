@@ -33,15 +33,15 @@ dependencies {
 // `kvalid-apt` y `kvalid-processor` dependen de kspkit publicado (io.github.kuroxbyte:kspkit-*).
 // Orden de release: kspkit primero, luego kvalid.
 val publishedModules = mapOf(
-    "kvalid-annotations" to "kvalid annotations (KMP): @Validated + the constraints, zero deps",
-    "kvalid-runtime" to "kvalid runtime (KMP): ValidationResult, Violation, ValidationContext (zero framework deps)",
-    "kvalid-core" to "kvalid core: the validation domain (ClassModel -> ValidationModel), zero compiler deps",
-    "kvalid-processor" to "kvalid KSP2 processor: add with ksp(...) to generate Type.validate() at compile time",
-    "kvalid-apt" to "kvalid Java variant (javac APT): @Validated Java classes -> XValidator.validate(obj)",
-    "kvalid-i18n" to "kvalid i18n (KMP): MessageResolver — resolve code+params to text (optional)",
-    "kvalid-ktor" to "kvalid Ktor integration: StatusPages.kvalid() -> 400 with the violations (optional)",
-    "kvalid-spring" to "kvalid Spring integration: Validator SPI for native @Valid (MVC + WebFlux) and @RestControllerAdvice -> 400 (optional)",
-    "kvalid-spring-boot-starter" to "kvalid Spring Boot starter: auto-configuration wiring @Valid for Spring MVC and WebFlux",
+    "kvalid-annotations" to "KValid annotations (KMP): @Validated + the constraints, zero deps",
+    "kvalid-runtime" to "KValid runtime (KMP): ValidationResult, Violation, ValidationContext (zero framework deps)",
+    "kvalid-core" to "KValid core: the validation domain (ClassModel -> ValidationModel), zero compiler deps",
+    "kvalid-processor" to "KValid KSP2 processor: add with ksp(...) to generate Type.validate() at compile time",
+    "kvalid-apt" to "KValid Java variant (javac APT): @Validated Java classes -> XValidator.validate(obj)",
+    "kvalid-i18n" to "KValid i18n (KMP): MessageResolver — resolve code+params to text (optional)",
+    "kvalid-ktor" to "KValid Ktor integration: StatusPages.kvalid() -> 400 with the violations (optional)",
+    "kvalid-spring" to "KValid Spring integration: Validator SPI for native @Valid (MVC + WebFlux) and @RestControllerAdvice -> 400 (optional)",
+    "kvalid-spring-boot-starter" to "KValid Spring Boot starter: auto-configuration wiring @Valid for Spring MVC and WebFlux",
 )
 
 configure(subprojects.filter { it.name in publishedModules.keys }) {

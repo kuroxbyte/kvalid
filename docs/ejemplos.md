@@ -1,4 +1,4 @@
-# kvalid — ejemplos ejecutables
+# KValid — ejemplos ejecutables
 
 El módulo [`kvalid-samples`](https://github.com/kuroxbyte/kvalid/tree/main/kvalid-samples)
 compila y corre de verdad las dos variantes más las integraciones:
@@ -15,7 +15,7 @@ compila y corre de verdad las dos variantes más las integraciones:
 ## Salida de la demo (extracto)
 
 ```
-========== kvalid — variante KOTLIN (KSP) ==========
+========== KValid — variante KOTLIN (KSP) ==========
 User válido → OK
 User inválido → name=notBlank, age=min, email=email
 Article slug válido → OK
@@ -27,7 +27,7 @@ Mensajes i18n (es) para 'User inválido':
   age: Debe ser al menos 18
   email: Email no válido
 
-========== kvalid — variante JAVA (APT) ==========
+========== KValid — variante JAVA (APT) ==========
 JavaUser válido → OK
 JavaUser inválido → name=notBlank, age=min, email=email
 JavaPost tags → tags[1]=notBlank

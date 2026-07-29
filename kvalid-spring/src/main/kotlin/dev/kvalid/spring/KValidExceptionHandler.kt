@@ -20,10 +20,10 @@ public data class ValidationError(
  * violaciones. El usuario valida en su controller con
  * `dto.validate().getOrThrow()` y Spring enruta el fallo aquí.
  *
- * Registrar como bean (component scan o `@Import(KvalidExceptionHandler::class)`).
+ * Registrar como bean (component scan o `@Import(KValidExceptionHandler::class)`).
  */
 @RestControllerAdvice
-public open class KvalidExceptionHandler {
+public open class KValidExceptionHandler {
 
     @ExceptionHandler(ValidationException::class)
     public open fun handle(ex: ValidationException): ResponseEntity<ValidationErrorResponse> =

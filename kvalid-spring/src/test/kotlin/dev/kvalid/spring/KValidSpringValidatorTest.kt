@@ -2,7 +2,7 @@ package dev.kvalid.spring
 
 import dev.kvalid.runtime.ValidationResult
 import dev.kvalid.runtime.Violation
-import dev.kvalid.runtime.spi.KvalidValidator
+import dev.kvalid.runtime.spi.KValidator
 import org.springframework.validation.BeanPropertyBindingResult
 import org.springframework.validation.Errors
 import org.springframework.validation.Validator
@@ -12,19 +12,19 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
-class KvalidSpringValidatorTest {
+class KValidSpringValidatorTest {
 
     data class Account(val name: String, val age: Int, val tags: List<String> = emptyList())
 
     /** Sustituye al adaptador que genera el processor (`kvalid.componentModel=spring`). */
-    private class FakeAdapter(private val violations: List<Violation>) : KvalidValidator<Account> {
+    private class FakeAdapter(private val violations: List<Violation>) : KValidator<Account> {
         override val type: Class<Account> = Account::class.java
         override fun validate(value: Account): ValidationResult<Account> =
             if (violations.isEmpty()) ValidationResult.Valid(value) else ValidationResult.Invalid(violations)
     }
 
-    private fun validatorFor(vararg violations: Violation): KvalidSpringValidator =
-        KvalidSpringValidator(KvalidValidatorRegistry(listOf(FakeAdapter(violations.toList()))))
+    private fun validatorFor(vararg violations: Violation): KValidSpringValidator =
+        KValidSpringValidator(KValidatorRegistry(listOf(FakeAdapter(violations.toList()))))
 
     private fun errorsFor(account: Account) = BeanPropertyBindingResult(account, "account")
 

@@ -2,7 +2,7 @@ package dev.kvalid.spring.boot
 
 import dev.kvalid.runtime.ValidationResult
 import dev.kvalid.runtime.Violation
-import dev.kvalid.runtime.spi.KvalidValidator
+import dev.kvalid.runtime.spi.KValidator
 import org.springframework.stereotype.Component
 
 /** DTO de entrada del endpoint bajo prueba. */
@@ -15,7 +15,7 @@ public data class CreateUser(val name: String, val email: String, val age: Int)
  * Aquí se prueba el **cableado con Spring**, no el codegen — por eso no hace falta correr KSP.
  */
 @Component
-public class CreateUserKvalidValidator : KvalidValidator<CreateUser> {
+public class CreateUserKValidator : KValidator<CreateUser> {
 
     override val type: Class<CreateUser> = CreateUser::class.java
 

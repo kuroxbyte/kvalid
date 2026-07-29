@@ -17,8 +17,8 @@ import org.springframework.validation.SmartValidator
  * Los `code` de kvalid (`notBlank`, `size.max`) alimentan la resolución de mensajes de Spring:
  * `MessageSource` prueba `code.objeto.campo`, `code.campo`, `code.tipo`, `code`.
  */
-public class KvalidSpringValidator(
-    private val registry: KvalidValidatorRegistry,
+public class KValidSpringValidator(
+    private val registry: KValidatorRegistry,
 ) : SmartValidator {
 
     override fun supports(clazz: Class<*>): Boolean = registry.supports(clazz)

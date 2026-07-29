@@ -1,7 +1,7 @@
 package dev.kvalid.spring.boot.mvc
 
 import dev.kvalid.spring.boot.CreateUser
-import dev.kvalid.spring.boot.CreateUserKvalidValidator
+import dev.kvalid.spring.boot.CreateUserKValidator
 import jakarta.validation.Valid
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.SpringBootConfiguration
@@ -24,7 +24,7 @@ import kotlin.test.assertEquals
 /** Sin `@ComponentScan`: se importa solo lo necesario para no arrastrar la app reactiva. */
 @SpringBootConfiguration
 @EnableAutoConfiguration
-@Import(CreateUserKvalidValidator::class, MvcTestApp.UsersController::class)
+@Import(CreateUserKValidator::class, MvcTestApp.UsersController::class)
 open class MvcTestApp {
 
     @RestController
@@ -41,7 +41,7 @@ open class MvcTestApp {
  */
 @SpringBootTest(classes = [MvcTestApp::class], properties = ["spring.mvc.problemdetails.enabled=true"])
 @AutoConfigureMockMvc
-class KvalidMvcIntegrationTest(@Autowired val mockMvc: MockMvc) {
+class KValidMvcIntegrationTest(@Autowired val mockMvc: MockMvc) {
 
     private val invalidBody = """{"name":"","email":"nope","age":15}"""
 

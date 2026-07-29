@@ -14,19 +14,19 @@ import java.util.ServiceLoader
  *
  * ```
  * @Component
- * public class AccountKvalidValidator : KvalidValidator<Account> {
+ * public class AccountKValidator : KValidator<Account> {
  *     override val type: Class<Account> = Account::class.java
  *     override fun validate(value: Account): ValidationResult<Account> = value.validate()
  * }
  * ```
  *
  * La validación real sigue siendo **código generado sin reflexión**; lo único dinámico es
- * buscar el adaptador en un `Map<Class<*>, KvalidValidator<*>>` — una búsqueda en un mapa,
+ * buscar el adaptador en un `Map<Class<*>, KValidator<*>>` — una búsqueda en un mapa,
  * no reflexión.
  *
  * **Solo JVM**: usa [Class]. El `validate()` puro sigue disponible en todos los targets KMP.
  */
-public interface KvalidValidator<T : Any> {
+public interface KValidator<T : Any> {
     /** El tipo que este adaptador valida. Clave de registro. */
     public val type: Class<T>
 
@@ -37,21 +37,21 @@ public interface KvalidValidator<T : Any> {
 /**
  * Registro por `ServiceLoader` para consumidores **sin contenedor DI** (JVM plano, Ktor).
  * Requiere generar los adaptadores con `kvalid.componentModel=serviceloader`, que además
- * escribe `META-INF/services/dev.kvalid.runtime.spi.KvalidValidator`.
+ * escribe `META-INF/services/dev.kvalid.runtime.spi.KValidator`.
  *
- * En Spring **no se usa esto**: el contenedor inyecta `List<KvalidValidator<*>>` directamente
+ * En Spring **no se usa esto**: el contenedor inyecta `List<KValidator<*>>` directamente
  * (y Spring AOT lo registra para native-image, que `ServiceLoader` no da gratis).
  */
-public object KvalidValidators {
+public object KValidators {
 
-    private val byType: Map<Class<*>, KvalidValidator<*>> by lazy {
-        ServiceLoader.load(KvalidValidator::class.java).associateBy { it.type }
+    private val byType: Map<Class<*>, KValidator<*>> by lazy {
+        ServiceLoader.load(KValidator::class.java).associateBy { it.type }
     }
 
     /** El adaptador de [type], o `null` si ese tipo no es `@Validated` (o no se generó). */
     @Suppress("UNCHECKED_CAST")
-    public fun <T : Any> forType(type: Class<T>): KvalidValidator<T>? =
-        byType[type] as KvalidValidator<T>?
+    public fun <T : Any> forType(type: Class<T>): KValidator<T>? =
+        byType[type] as KValidator<T>?
 
     /** Valida [value] si hay adaptador; si no lo hay, lo considera válido (nada que validar). */
     @Suppress("UNCHECKED_CAST")

@@ -6,9 +6,9 @@ import dev.kvalid.annotations.Range
 import dev.kvalid.annotations.Size
 import dev.kvalid.annotations.Validated
 
-/** Modelo validado por kvalid (codegen, cero reflexión). Genera `KvalidUser.validate()`. */
+/** Modelo validado por kvalid (codegen, cero reflexión). Genera `KValidUser.validate()`. */
 @Validated
-data class KvalidUser(
+data class KValidUser(
     @NotBlank @Size(max = 80) val name: String,
     @Range(min = 18, max = 120) val age: Int,
     @Email val email: String,

@@ -13,7 +13,7 @@ import org.openjdk.jmh.annotations.State
 @State(Scope.Benchmark)
 open class ValidationBenchmark {
 
-    private val kvalidUser = KvalidUser("Ann", 30, "ann@x.com")
+    private val kvalidUser = KValidUser("Ann", 30, "ann@x.com")
     private val hibernateUser = HibernateUser("Ann", 30, "ann@x.com")
     private val hibernate: Validator = Validation.buildDefaultValidatorFactory().validator
 

@@ -1,25 +1,25 @@
 package dev.kvalid.spring
 
-import dev.kvalid.runtime.spi.KvalidValidator
+import dev.kvalid.runtime.spi.KValidator
 
 /**
- * Índice `Class → KvalidValidator` de los adaptadores generados.
+ * Índice `Class → KValidator` de los adaptadores generados.
  *
  * En Spring **no hace falta `ServiceLoader`**: los adaptadores se generan con
  * `@Component` (opción de KSP `kvalid.componentModel=spring`) y el contenedor inyecta
- * `List<KvalidValidator<*>>` ya resuelta. Ventaja añadida: **Spring AOT** los registra para
+ * `List<KValidator<*>>` ya resuelta. Ventaja añadida: **Spring AOT** los registra para
  * native-image, cosa que `ServiceLoader` no da gratis.
  *
  * El lookup es un `Map` — **no reflexión**. La validación real sigue siendo código generado.
  */
-public class KvalidValidatorRegistry(validators: List<KvalidValidator<*>>) {
+public class KValidatorRegistry(validators: List<KValidator<*>>) {
 
-    private val byType: Map<Class<*>, KvalidValidator<*>> = validators.associateBy { it.type }
+    private val byType: Map<Class<*>, KValidator<*>> = validators.associateBy { it.type }
 
     /** El adaptador de [type], o `null` si ese tipo no es `@Validated`. */
     @Suppress("UNCHECKED_CAST")
-    public fun <T : Any> forType(type: Class<T>): KvalidValidator<T>? =
-        byType[type] as KvalidValidator<T>?
+    public fun <T : Any> forType(type: Class<T>): KValidator<T>? =
+        byType[type] as KValidator<T>?
 
     /**
      * Si hay validador para [type]. Coincidencia **exacta** de clase: los tipos `@Validated`

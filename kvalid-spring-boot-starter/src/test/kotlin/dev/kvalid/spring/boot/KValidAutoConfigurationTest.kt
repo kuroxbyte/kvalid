@@ -1,11 +1,11 @@
 package dev.kvalid.spring.boot
 
 import dev.kvalid.spring.CompositeValidator
-import dev.kvalid.spring.KvalidExceptionHandler
-import dev.kvalid.spring.KvalidSpringValidator
-import dev.kvalid.spring.KvalidValidatorRegistry
-import dev.kvalid.spring.KvalidWebFluxConfigurer
-import dev.kvalid.spring.KvalidWebMvcConfigurer
+import dev.kvalid.spring.KValidExceptionHandler
+import dev.kvalid.spring.KValidSpringValidator
+import dev.kvalid.spring.KValidatorRegistry
+import dev.kvalid.spring.KValidWebFluxConfigurer
+import dev.kvalid.spring.KValidWebMvcConfigurer
 import org.assertj.core.api.Assertions.assertThat
 import org.springframework.boot.autoconfigure.AutoConfigurations
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration
@@ -19,22 +19,22 @@ import kotlin.test.Test
  * La auto-configuración se prueba con `ApplicationContextRunner` — el estándar de Boot para
  * verificar que los beans aparecen/desaparecen según classpath, tipo de app y properties.
  */
-class KvalidAutoConfigurationTest {
+class KValidAutoConfigurationTest {
 
-    private val autoConfig = AutoConfigurations.of(KvalidAutoConfiguration::class.java)
+    private val autoConfig = AutoConfigurations.of(KValidAutoConfiguration::class.java)
 
     @Test
     fun `en app NO web registra el registry, el validador y el advice`() {
         ApplicationContextRunner().withConfiguration(autoConfig)
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .run { context ->
-                assertThat(context).hasSingleBean(KvalidValidatorRegistry::class.java)
-                assertThat(context).hasSingleBean(KvalidSpringValidator::class.java)
-                assertThat(context).hasSingleBean(KvalidExceptionHandler::class.java)
+                assertThat(context).hasSingleBean(KValidatorRegistry::class.java)
+                assertThat(context).hasSingleBean(KValidSpringValidator::class.java)
+                assertThat(context).hasSingleBean(KValidExceptionHandler::class.java)
                 // Sin stack web no se registra ningún configurer.
-                assertThat(context).doesNotHaveBean(KvalidWebMvcConfigurer::class.java)
-                assertThat(context).doesNotHaveBean(KvalidWebFluxConfigurer::class.java)
-                assertThat(context.getBean(KvalidValidatorRegistry::class.java).size).isEqualTo(1)
+                assertThat(context).doesNotHaveBean(KValidWebMvcConfigurer::class.java)
+                assertThat(context).doesNotHaveBean(KValidWebFluxConfigurer::class.java)
+                assertThat(context.getBean(KValidatorRegistry::class.java).size).isEqualTo(1)
             }
     }
 
@@ -43,28 +43,28 @@ class KvalidAutoConfigurationTest {
         ApplicationContextRunner().withConfiguration(autoConfig)
             .withPropertyValues("kvalid.enabled=false")
             .run { context ->
-                assertThat(context).doesNotHaveBean(KvalidValidatorRegistry::class.java)
-                assertThat(context).doesNotHaveBean(KvalidSpringValidator::class.java)
+                assertThat(context).doesNotHaveBean(KValidatorRegistry::class.java)
+                assertThat(context).doesNotHaveBean(KValidSpringValidator::class.java)
             }
     }
 
     @Test
     fun `app servlet registra el WebMvcConfigurer y NO el de WebFlux`() {
         WebApplicationContextRunner().withConfiguration(autoConfig)
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .run { context ->
-                assertThat(context).hasSingleBean(KvalidWebMvcConfigurer::class.java)
-                assertThat(context).doesNotHaveBean(KvalidWebFluxConfigurer::class.java)
+                assertThat(context).hasSingleBean(KValidWebMvcConfigurer::class.java)
+                assertThat(context).doesNotHaveBean(KValidWebFluxConfigurer::class.java)
             }
     }
 
     @Test
     fun `app reactiva registra el WebFluxConfigurer y NO el de MVC`() {
         ReactiveWebApplicationContextRunner().withConfiguration(autoConfig)
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .run { context ->
-                assertThat(context).hasSingleBean(KvalidWebFluxConfigurer::class.java)
-                assertThat(context).doesNotHaveBean(KvalidWebMvcConfigurer::class.java)
+                assertThat(context).hasSingleBean(KValidWebFluxConfigurer::class.java)
+                assertThat(context).doesNotHaveBean(KValidWebMvcConfigurer::class.java)
             }
     }
 
@@ -72,12 +72,12 @@ class KvalidAutoConfigurationTest {
     @Test
     fun `register-validator=false no registra configurer (evita el choque de getValidator)`() {
         WebApplicationContextRunner().withConfiguration(autoConfig)
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .withPropertyValues("kvalid.web.register-validator=false")
             .run { context ->
-                assertThat(context).doesNotHaveBean(KvalidWebMvcConfigurer::class.java)
+                assertThat(context).doesNotHaveBean(KValidWebMvcConfigurer::class.java)
                 // el resto sigue disponible para uso explícito
-                assertThat(context).hasSingleBean(KvalidSpringValidator::class.java)
+                assertThat(context).hasSingleBean(KValidSpringValidator::class.java)
             }
     }
 
@@ -88,13 +88,13 @@ class KvalidAutoConfigurationTest {
             .withConfiguration(
                 AutoConfigurations.of(
                     ValidationAutoConfiguration::class.java,
-                    KvalidAutoConfiguration::class.java,
+                    KValidAutoConfiguration::class.java,
                 ),
             )
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .run { context ->
                 val global = context.getBean(
-                    KvalidAutoConfiguration.KVALID_WEB_VALIDATOR,
+                    KValidAutoConfiguration.KVALID_WEB_VALIDATOR,
                     CompositeValidator::class.java,
                 )
                 assertThat(global.delegates).hasSize(2)
@@ -104,24 +104,24 @@ class KvalidAutoConfigurationTest {
     @Test
     fun `sin Jakarta Bean Validation el composite lleva solo a kvalid`() {
         WebApplicationContextRunner().withConfiguration(autoConfig)
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .run { context ->
                 val global = context.getBean(
-                    KvalidAutoConfiguration.KVALID_WEB_VALIDATOR,
+                    KValidAutoConfiguration.KVALID_WEB_VALIDATOR,
                     CompositeValidator::class.java,
                 )
                 assertThat(global.delegates).hasSize(1)
-                assertThat(global.delegates.single()).isInstanceOf(KvalidSpringValidator::class.java)
+                assertThat(global.delegates.single()).isInstanceOf(KValidSpringValidator::class.java)
             }
     }
 
-    /** Un bean por tipo: si no, un `@Autowired KvalidSpringValidator` fallaría por ambigüedad. */
+    /** Un bean por tipo: si no, un `@Autowired KValidSpringValidator` fallaría por ambigüedad. */
     @Test
     fun `no hay ambiguedad de beans por tipo`() {
         WebApplicationContextRunner().withConfiguration(autoConfig)
-            .withUserConfiguration(CreateUserKvalidValidator::class.java)
+            .withUserConfiguration(CreateUserKValidator::class.java)
             .run { context ->
-                assertThat(context).hasSingleBean(KvalidSpringValidator::class.java)
+                assertThat(context).hasSingleBean(KValidSpringValidator::class.java)
                 assertThat(context).hasSingleBean(CompositeValidator::class.java)
             }
     }

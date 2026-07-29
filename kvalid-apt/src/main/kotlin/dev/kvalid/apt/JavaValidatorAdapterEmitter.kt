@@ -28,7 +28,7 @@ internal enum class ComponentModel {
 
     internal companion object {
         const val OPTION: String = "kvalid.componentModel"
-        const val SERVICES_PATH: String = "META-INF/services/dev.kvalid.runtime.spi.KvalidValidator"
+        const val SERVICES_PATH: String = "META-INF/services/dev.kvalid.runtime.spi.KValidator"
 
         /** `null` si el valor no se reconoce (el processor avisa por Messager). */
         fun parse(raw: String?): ComponentModel? = when (raw?.trim()?.lowercase()) {
@@ -45,7 +45,7 @@ internal enum class ComponentModel {
  *
  * ```java
  * @Component                                                  // solo con componentModel=spring
- * public final class AccountKvalidValidator implements KvalidValidator<Account> {
+ * public final class AccountKValidator implements KValidator<Account> {
  *   @Override public Class<Account> getType() { return Account.class; }
  *   @Override public ValidationResult<Account> validate(Account value) {
  *     return AccountValidator.validate(value);
@@ -59,12 +59,12 @@ internal class JavaValidatorAdapterEmitter {
 
     private companion object {
         val RESULT = ClassName.get("dev.kvalid.runtime", "ValidationResult")
-        val SPI = ClassName.get("dev.kvalid.runtime.spi", "KvalidValidator")
+        val SPI = ClassName.get("dev.kvalid.runtime.spi", "KValidator")
         val SPRING_COMPONENT = ClassName.get("org.springframework.stereotype", "Component")
         val OVERRIDE = AnnotationSpec.builder(Override::class.java).build()
     }
 
-    fun adapterName(type: TypeRef): String = simpleNamesOf(type).joinToString("") + "KvalidValidator"
+    fun adapterName(type: TypeRef): String = simpleNamesOf(type).joinToString("") + "KValidator"
 
     fun adapterFqn(type: TypeRef): String {
         val pkg = packageOf(type)

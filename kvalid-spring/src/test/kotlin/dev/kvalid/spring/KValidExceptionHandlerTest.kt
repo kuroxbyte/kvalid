@@ -6,11 +6,11 @@ import org.springframework.http.HttpStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class KvalidExceptionHandlerTest {
+class KValidExceptionHandlerTest {
 
     @Test
     fun `mapea ValidationException a un 400 con las violaciones`() {
-        val resp = KvalidExceptionHandler().handle(
+        val resp = KValidExceptionHandler().handle(
             ValidationException(listOf(Violation("name", "notBlank", message = "requerido"))),
         )
         assertEquals(HttpStatus.BAD_REQUEST, resp.statusCode)

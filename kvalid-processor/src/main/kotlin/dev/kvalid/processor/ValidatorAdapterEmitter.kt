@@ -14,9 +14,9 @@ import dev.genkit.ports.GeneratedFile
 /**
  * Cómo se descubre el adaptador generado en runtime. Opción de KSP `kvalid.componentModel`.
  *
- * El adaptador (`KvalidValidator<T>`) existe porque el `validate()` generado es una *extension
+ * El adaptador (`KValidator<T>`) existe porque el `validate()` generado es una *extension
  * function*, que no se puede despachar genéricamente desde un borde que recibe `Any` (el
- * `Validator` de Spring, un filtro...). Ver `dev.kvalid.runtime.spi.KvalidValidator`.
+ * `Validator` de Spring, un filtro...). Ver `dev.kvalid.runtime.spi.KValidator`.
  */
 internal enum class ComponentModel {
     /** No se genera adaptador (default): solo la extension `validate()`. */
@@ -48,7 +48,7 @@ internal enum class ComponentModel {
  *
  * ```
  * @Component                                          // solo con componentModel = spring
- * public class AccountKvalidValidator : KvalidValidator<Account> {
+ * public class AccountKValidator : KValidator<Account> {
  *     override val type: Class<Account> = Account::class.java
  *     override fun validate(value: Account): ValidationResult<Account> = value.validate()
  * }
@@ -61,13 +61,13 @@ internal class ValidatorAdapterEmitter {
 
     private companion object {
         val RESULT = ClassName("dev.kvalid.runtime", "ValidationResult")
-        val SPI = ClassName("dev.kvalid.runtime.spi", "KvalidValidator")
+        val SPI = ClassName("dev.kvalid.runtime.spi", "KValidator")
         val JAVA_CLASS = ClassName("java.lang", "Class")
         val SPRING_COMPONENT = ClassName("org.springframework.stereotype", "Component")
     }
 
     /** Nombre del adaptador de [type]. Aplana los anidados (`Outer.Inner` → `OuterInner…`). */
-    fun adapterName(type: TypeRef): String = simpleNamesOf(type).joinToString("") + "KvalidValidator"
+    fun adapterName(type: TypeRef): String = simpleNamesOf(type).joinToString("") + "KValidator"
 
     /** FQN del adaptador, para la línea de `META-INF/services`. */
     fun adapterFqn(type: TypeRef): String {

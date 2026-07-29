@@ -1,4 +1,4 @@
-# kvalid — variante Java (APT)
+# KValid — variante Java (APT)
 
 KSP solo procesa Kotlin. Para **clases Java** existe `kvalid-apt`, un annotation processor de
 javac que reutiliza el **mismo dominio** (`kvalid-core`) y el mismo runtime
@@ -71,7 +71,7 @@ public final class SlugValidator implements ConstraintValidator<String> {
 
 ## Element-level en Java
 
-Las anotaciones de kvalid declaran `@Target` con `TYPE` (→ `TYPE_USE` en Java), así que se
+Las anotaciones de KValid declaran `@Target` con `TYPE` (→ `TYPE_USE` en Java), así que se
 aplican sobre el argumento de tipo:
 
 ```java

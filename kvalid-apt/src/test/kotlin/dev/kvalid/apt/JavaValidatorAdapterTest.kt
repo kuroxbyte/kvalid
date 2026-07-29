@@ -1,7 +1,7 @@
 package dev.kvalid.apt
 
 import dev.kvalid.runtime.ValidationResult
-import dev.kvalid.runtime.spi.KvalidValidator
+import dev.kvalid.runtime.spi.KValidator
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.Files
@@ -60,19 +60,19 @@ class JavaValidatorAdapterTest {
         val result = compile(source)
         val names = result.generatedSources().map { it.name }
         assertTrue(names.any { it == "AccountValidator.java" }, "falta el validador de siempre: $names")
-        assertFalse(names.any { it.contains("KvalidValidator") }, "no debería haber adaptador: $names")
+        assertFalse(names.any { it.contains("KValidator") }, "no debería haber adaptador: $names")
     }
 
     @Test
     fun `componentModel=spring genera adaptador Java con @Component`() {
         val result = compile(source, mapOf("kvalid.componentModel" to "spring"))
 
-        val adapter = result.generated("AccountKvalidValidator.java")
+        val adapter = result.generated("AccountKValidator.java")
         assertNotNull(adapter, "no se generó el adaptador: ${result.generatedSources().map { it.name }}")
 
         val code = adapter.readText()
         assertTrue("@Component" in code, code)
-        assertTrue("implements KvalidValidator<Account>" in code, code)
+        assertTrue("implements KValidator<Account>" in code, code)
         assertTrue("AccountValidator.validate(value)" in code, "debe DELEGAR, no reimplementar:\n$code")
     }
 
@@ -82,8 +82,8 @@ class JavaValidatorAdapterTest {
         val cl = result.classLoader
 
         @Suppress("UNCHECKED_CAST")
-        val adapter = cl.loadClass("t.AccountKvalidValidator").getDeclaredConstructor().newInstance()
-            as KvalidValidator<Any>
+        val adapter = cl.loadClass("t.AccountKValidator").getDeclaredConstructor().newInstance()
+            as KValidator<Any>
         val accountClass = cl.loadClass("t.Account")
         assertEquals(accountClass, adapter.type)
 
@@ -98,13 +98,13 @@ class JavaValidatorAdapterTest {
     fun `componentModel=serviceloader genera el META-INF-services sin @Component`() {
         val result = compile(source, mapOf("kvalid.componentModel" to "serviceloader"))
 
-        val adapter = result.generated("AccountKvalidValidator.java")
+        val adapter = result.generated("AccountKValidator.java")
         assertNotNull(adapter)
         assertFalse("@Component" in adapter.readText(), "sin Spring no debe llevar @Component")
 
-        val services = File(result.classes, "META-INF/services/dev.kvalid.runtime.spi.KvalidValidator")
+        val services = File(result.classes, "META-INF/services/dev.kvalid.runtime.spi.KValidator")
         assertTrue(services.isFile, "falta ${services.path}")
-        assertEquals("t.AccountKvalidValidator", services.readText().trim())
+        assertEquals("t.AccountKValidator", services.readText().trim())
     }
 
     @Test
@@ -112,6 +112,6 @@ class JavaValidatorAdapterTest {
         val result = compile(source, mapOf("kvalid.componentModel" to "koin"))
 
         assertTrue("kvalid.componentModel" in result.messages, "debe avisar: ${result.messages}")
-        assertFalse(result.generatedSources().any { it.name.contains("KvalidValidator") })
+        assertFalse(result.generatedSources().any { it.name.contains("KValidator") })
     }
 }

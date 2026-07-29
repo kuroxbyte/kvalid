@@ -12,17 +12,17 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
  * no nulo**. Por eso la auto-configuración lo declara `@ConditionalOnMissingBean` y se puede
  * desactivar con `kvalid.web.register-validator=false` para quien ya registre el suyo.
  */
-public class KvalidWebMvcConfigurer(
+public class KValidWebMvcConfigurer(
     private val validator: Validator,
 ) : WebMvcConfigurer {
     override fun getValidator(): Validator = validator
 }
 
 /**
- * Equivalente para **WebFlux** (reactivo). El mismo [KvalidSpringValidator] sirve a los dos
+ * Equivalente para **WebFlux** (reactivo). El mismo [KValidSpringValidator] sirve a los dos
  * stacks: lo que cambia es solo la interfaz de configuración.
  */
-public class KvalidWebFluxConfigurer(
+public class KValidWebFluxConfigurer(
     private val validator: Validator,
 ) : WebFluxConfigurer {
     override fun getValidator(): Validator = validator

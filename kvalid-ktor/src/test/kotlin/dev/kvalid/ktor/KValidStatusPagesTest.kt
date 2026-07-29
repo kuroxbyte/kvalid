@@ -17,7 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-class KvalidStatusPagesTest {
+class KValidStatusPagesTest {
 
     @Test
     fun `una ValidationException se convierte en 400 con las violaciones`() = testApplication {
