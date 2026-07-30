@@ -30,12 +30,22 @@ public data class ValidationError(
  *
  * Requiere ContentNegotiation configurado (kotlinx.serialization JSON) para serializar el cuerpo.
  */
-public fun StatusPagesConfig.kvalid(status: HttpStatusCode = HttpStatusCode.BadRequest) {
+public fun StatusPagesConfig.kvalid(
+    status: HttpStatusCode = HttpStatusCode.BadRequest,
+    /**
+     * Texto para las violaciones sin `message` propio. Por defecto `null` (solo `path` +
+     * `code`); pásale `DefaultMessageResolver(DefaultMessages.ES)::resolve` —o tu propio
+     * resolutor— para que el cuerpo lleve texto legible.
+     */
+    fallbackMessage: ((dev.kvalid.runtime.Violation) -> String)? = null,
+) {
     exception<ValidationException> { call, cause ->
         call.respond(
             status,
             ValidationErrorResponse(
-                cause.violations.map { ValidationError(it.path, it.code, it.message) },
+                cause.violations.map {
+                    ValidationError(it.path, it.code, it.message ?: fallbackMessage?.invoke(it))
+                },
             ),
         )
     }

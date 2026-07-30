@@ -11,6 +11,9 @@ kotlin {
 // Boot). Convención de terceros: <lib>-spring-boot-starter (spring-boot-starter-* es de Spring).
 dependencies {
     api(project(":kvalid-spring"))
+    // El starter es "pilas incluidas": trae los mensajes por defecto para que un 400 no
+    // salga con `"notBlank"` sin configurar nada. kvalid-i18n no arrastra dependencias.
+    api(project(":kvalid-i18n"))
     api(libs.spring.boot.autoconfigure)
     // El binding por constructor de @ConfigurationProperties en Kotlin lo resuelve Boot con
     // KotlinReflectionParameterNameDiscoverer: sin kotlin-reflect el arranque falla con

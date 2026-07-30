@@ -1,6 +1,7 @@
 package dev.kvalid.spring
 
 import dev.kvalid.runtime.ValidationException
+import dev.kvalid.runtime.Violation
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -23,11 +24,21 @@ public data class ValidationError(
  * Registrar como bean (component scan o `@Import(KValidExceptionHandler::class)`).
  */
 @RestControllerAdvice
-public open class KValidExceptionHandler {
+public open class KValidExceptionHandler(
+    /**
+     * Mismo fallback que [KValidSpringValidator]: sin esto, `@Valid` devolvía un mensaje
+     * legible y `getOrThrow()` un `message: null`, para las mismas violaciones.
+     */
+    private val fallbackMessage: (Violation) -> String = { it.code },
+) {
 
     @ExceptionHandler(ValidationException::class)
     public open fun handle(ex: ValidationException): ResponseEntity<ValidationErrorResponse> =
         ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
-            .body(ValidationErrorResponse(ex.violations.map { ValidationError(it.path, it.code, it.message) }))
+            .body(
+                ValidationErrorResponse(
+                    ex.violations.map { ValidationError(it.path, it.code, it.message ?: fallbackMessage(it)) },
+                ),
+            )
 }

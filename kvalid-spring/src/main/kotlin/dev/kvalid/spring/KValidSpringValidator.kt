@@ -19,6 +19,15 @@ import org.springframework.validation.SmartValidator
  */
 public class KValidSpringValidator(
     private val registry: KValidatorRegistry,
+    /**
+     * Texto por defecto de una violación sin `message` propio. Por defecto el `code`, que es
+     * lo mínimo que no rompe el `ProblemDetail` (ver [reject]).
+     *
+     * Es una función y no un `MessageResolver` para no atar este módulo a `kvalid-i18n`: el
+     * starter le pasa uno con [dev.kvalid.i18n.DefaultMessages] cuando está disponible, y
+     * `MessageResolver` es una `fun interface`, así que encaja tal cual.
+     */
+    private val fallbackMessage: (Violation) -> String = { it.code },
 ) : SmartValidator {
 
     override fun supports(clazz: Class<*>): Boolean = registry.supports(clazz)
@@ -47,8 +56,9 @@ public class KValidSpringValidator(
         // code + params), pero Spring resuelve los errores como MessageSourceResolvable al
         // renderizar el ProblemDetail: sin defaultMessage y sin entrada en el MessageSource
         // lanza NoSuchMessageException y el cuerpo del 400 se pierde (se va vacío).
-        // El código es el fallback natural; con un MessageSource se sigue traduciendo por él.
-        val message = violation.message ?: violation.code
+        // El MessageSource de Spring sigue mandando: `defaultMessage` solo se usa cuando no
+        // hay entrada para el code, así que mejorar este texto no le quita control a nadie.
+        val message = violation.message ?: fallbackMessage(violation)
 
         if (violation.path.isBlank()) {
             errors.reject(violation.code, args, message) // cross-field / nivel de clase

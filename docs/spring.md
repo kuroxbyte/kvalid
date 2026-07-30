@@ -198,6 +198,7 @@ y ya: el starter detecta el tipo de aplicación y registra `WebFluxConfigurer` e
 | Property | Default | Para qué |
 |---|---|---|
 | `kvalid.enabled` | `true` | Apagar toda la integración. |
+| `kvalid.messages` | `auto` | Idioma de los mensajes por defecto: `auto` (locale de la JVM), `en`, `es`, `none` (deja el `code` crudo). Un bean `MessageResolver` propio gana; y el `MessageSource` de Spring también, porque esto solo fija el `defaultMessage`. |
 | `kvalid.web.register-validator` | `true` | Registrar el validador global. **Ponlo en `false` si ya registras el tuyo**: Spring falla si dos `WebMvcConfigurer` devuelven validador. |
 
 ## 10 · Sigue estando el estilo explícito

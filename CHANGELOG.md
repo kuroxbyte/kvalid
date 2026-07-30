@@ -9,6 +9,23 @@ Nada todavía.
 ## [0.3.0] — 2026-07
 
 ### Añadido
+- **Mensajes por defecto en `kvalid-i18n`** (`DefaultMessages.EN` / `.ES`), en `commonMain`.
+  Hasta ahora, sin configurar nada un `@NotBlank` devolvía el `code` crudo (`"notBlank"`),
+  mientras que Hibernate Validator trae plantillas en 26 idiomas dentro del JAR. Son mapas de
+  Kotlin y no ficheros `.properties` porque fuera de la JVM no existen `ResourceBundle` ni
+  `Locale`; el idioma lo elige quien llama, con `DefaultMessages.forLanguage("es-PE")`.
+- **El starter de Spring los cablea solo.** Nueva propiedad `kvalid.messages`
+  (`auto` por defecto — el locale de la JVM — más `en`, `es` y `none`), así que un 400 sale con
+  *"must not be blank"* en vez de *"notBlank"* sin escribir una línea. Un bean `MessageResolver`
+  propio sigue ganando, y el `MessageSource` de Spring también: `defaultMessage` solo se usa
+  cuando no hay entrada para el `code`.
+- `KValidSpringValidator` y `KValidExceptionHandler` aceptan un
+  `fallbackMessage: (Violation) -> String`, y `StatusPages.kvalid()` de Ktor su equivalente. Es
+  una función y no un `MessageResolver` para no atar `kvalid-spring` ni `kvalid-ktor` a
+  `kvalid-i18n`; el starter les pasa el resolutor ya configurado.
+- **El camino explícito da el mismo texto que `@Valid`.** `validate().getOrThrow()` devolvía
+  `message: null` para violaciones que `@Valid` sí resolvía a texto — misma validación, dos
+  respuestas distintas según por dónde entrara.
 - **Los 8 constraints que faltaban para cubrir el vocabulario de Jakarta Validation 3.0:**
   `@Null`, `@AssertTrue`, `@AssertFalse`, `@Digits`, `@PositiveOrZero`, `@NegativeOrZero`,
   `@PastOrPresent` y `@FutureOrPresent`. Disponibles por igual en KSP (Kotlin) y APT (Java).

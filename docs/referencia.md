@@ -143,3 +143,39 @@ constraint.
 
 Constraints sobre elementos de colección (`List<@NotBlank String>`): requiere `@Target(TYPE)`
 y leer anotaciones de argumento de tipo en KSP. Diferido (no bloquea el resto).
+
+## Mensajes e internacionalización
+
+El código generado **no produce texto**: emite una `Violation` con `path`, `code` y `params`.
+Eso es lo que permite que el mismo `ValidationResult` se renderice en el servidor y en el
+cliente, cada uno en su idioma — si el mensaje se horneara al compilar, el idioma quedaría fijo.
+
+```kotlin
+if (v.isBlank()) violations += Violation("name", "notBlank")
+if (v.length > 40) violations += Violation("name", "size.max", mapOf("max" to 40))
+```
+
+El módulo opcional `kvalid-i18n` traduce `code` + `params` a texto, con esta precedencia:
+
+1. `violation.message` (el `message = "..."` de la anotación) — gana siempre, pero **queda fijo
+   en el binario**, así que no se traduce: úsalo solo para mensajes de un campo concreto.
+2. La plantilla del `code` en tu mapa o `ResourceBundle`.
+3. El `fallback`, que por defecto devuelve el propio `code`.
+
+`DefaultMessages` trae plantillas para los 26 códigos en inglés y español:
+
+```kotlin
+val es = DefaultMessageResolver(DefaultMessages.ES)
+es.resolve(Violation("name", "size.max", mapOf("max" to 80)))  // "el tamaño debe ser como máximo 80"
+
+// Pisar solo una, sin copiar el mapa entero:
+DefaultMessageResolver(DefaultMessages.ES + mapOf("email" to "Correo inválido"))
+
+// Otro idioma: copia EN, traduce los valores y pásalo al resolutor.
+```
+
+La interpolación es un reemplazo textual de `{param}`: nada de motores de expresiones, que no
+existirían en Kotlin/Native ni en JS.
+
+En Spring no hay que hacer nada: el starter cablea el resolutor según `kvalid.messages`
+(`auto` | `en` | `es` | `none`). Ver [Spring Boot](spring.md).

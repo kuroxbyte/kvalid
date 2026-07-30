@@ -7,6 +7,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 public data class KValidProperties(
     /** Desactiva por completo la integración (`kvalid.enabled=false`). */
     val enabled: Boolean = true,
+
+    /**
+     * Idioma de los mensajes por defecto de las violaciones sin `message` propio:
+     * `auto` (el locale de la JVM), `en`, `es`, o `none` para quedarse con el `code` crudo.
+     *
+     * Solo afecta al `defaultMessage`: si defines un `MessageSource` con entradas para el
+     * `code`, Spring sigue usando el tuyo. Y un bean `MessageResolver` propio gana sobre esto.
+     */
+    val messages: String = "auto",
+
     val web: Web = Web(),
 ) {
     public data class Web(

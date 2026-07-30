@@ -1,5 +1,8 @@
 package dev.kvalid.spring.boot
 
+import dev.kvalid.i18n.DefaultMessageResolver
+import dev.kvalid.i18n.DefaultMessages
+import dev.kvalid.i18n.MessageResolver
 import dev.kvalid.runtime.spi.KValidator
 import dev.kvalid.spring.CompositeValidator
 import dev.kvalid.spring.KValidExceptionHandler
@@ -20,6 +23,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.validation.Validator
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import java.util.Locale
 
 /**
  * Auto-configuración de kvalid.
@@ -42,15 +46,34 @@ public open class KValidAutoConfiguration {
         validators: ObjectProvider<KValidator<*>>,
     ): KValidatorRegistry = KValidatorRegistry(validators.orderedStream().toList())
 
+    /**
+     * Mensajes por defecto para las violaciones sin `message` propio.
+     *
+     * Un `MessageResolver` declarado por el usuario gana; si no, se usan las plantillas de
+     * [DefaultMessages] según `kvalid.messages`. Con `none` se conserva el comportamiento
+     * anterior: el `defaultMessage` es el `code`.
+     */
     @Bean
     @ConditionalOnMissingBean
-    public open fun kvalidSpringValidator(registry: KValidatorRegistry): KValidSpringValidator =
-        KValidSpringValidator(registry)
+    public open fun kvalidMessageResolver(properties: KValidProperties): MessageResolver =
+        when (val lang = properties.messages.lowercase()) {
+            "none" -> MessageResolver { it.code }
+            "auto" -> DefaultMessageResolver(DefaultMessages.forLanguage(Locale.getDefault().language))
+            else -> DefaultMessageResolver(DefaultMessages.forLanguage(lang))
+        }
+
+    @Bean
+    @ConditionalOnMissingBean
+    public open fun kvalidSpringValidator(
+        registry: KValidatorRegistry,
+        messages: MessageResolver,
+    ): KValidSpringValidator = KValidSpringValidator(registry, messages::resolve)
 
     /** `ValidationException` (estilo explícito `validate().getOrThrow()`) → 400. */
     @Bean
     @ConditionalOnMissingBean
-    public open fun kvalidExceptionHandler(): KValidExceptionHandler = KValidExceptionHandler()
+    public open fun kvalidExceptionHandler(messages: MessageResolver): KValidExceptionHandler =
+        KValidExceptionHandler(messages::resolve)
 
     /**
      * El validador que se registra como global. Si Boot ya expone `defaultValidator`
