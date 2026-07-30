@@ -6,7 +6,7 @@ Versionado semántico.
 
 Nada todavía.
 
-## [0.3.0] — 2026-07
+## [0.4.0] — 2026-07
 
 ### Añadido
 - **Mensajes por defecto en `kvalid-i18n`** (`DefaultMessages.EN` / `.ES`), en `commonMain`.
@@ -23,9 +23,15 @@ Nada todavía.
   `fallbackMessage: (Violation) -> String`, y `StatusPages.kvalid()` de Ktor su equivalente. Es
   una función y no un `MessageResolver` para no atar `kvalid-spring` ni `kvalid-ktor` a
   `kvalid-i18n`; el starter les pasa el resolutor ya configurado.
+
+### Corregido
 - **El camino explícito da el mismo texto que `@Valid`.** `validate().getOrThrow()` devolvía
   `message: null` para violaciones que `@Valid` sí resolvía a texto — misma validación, dos
   respuestas distintas según por dónde entrara.
+
+## [0.3.0] — 2026-07
+
+### Añadido
 - **Los 8 constraints que faltaban para cubrir el vocabulario de Jakarta Validation 3.0:**
   `@Null`, `@AssertTrue`, `@AssertFalse`, `@Digits`, `@PositiveOrZero`, `@NegativeOrZero`,
   `@PastOrPresent` y `@FutureOrPresent`. Disponibles por igual en KSP (Kotlin) y APT (Java).

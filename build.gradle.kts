@@ -47,7 +47,7 @@ if (isMac && !xcodeAvailable) {
 
 subprojects {
     group = "io.github.kuroxbyte"
-    version = "0.3.0"
+    version = "0.4.0"
     // Kover en cada módulo para exponer la variante de cobertura que agrega el root.
     apply(plugin = "org.jetbrains.kotlinx.kover")
 
